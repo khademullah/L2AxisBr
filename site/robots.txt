@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://khademullah.github.io/L2AxisBr/sitemap.xml
+Sitemap: https://khademullah.github.io/L2AxisBr/site.xml

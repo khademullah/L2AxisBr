@@ -1,5 +1,10 @@
 # L2AxisBr
 
+<p align="center">
+  <img src="docs/logo.jpg" alt="L2AxisBr, dark" width="180">
+  <img src="docs/logo-2.jpg" alt="L2AxisBr, light" width="180">
+</p>
+
 Two-port MAC-learning Ethernet bridge on AXI-Stream. A recorded pcap is replayed through DPI-C onto one or both ports; `pkt_l2br` learns, floods, forwards, or filters; a C model of the same table scores every decision.
 
 What it does is switch Ethernet frames between two AXI-Stream ports: learn a source MAC, then flood, forward, or filter. The bench replays a pcap in Verilator. That is a two-port L2 switch in simulation.
@@ -116,7 +121,10 @@ File format and BPF stay in C. The MAC table and the datapath are clocked System
 | `ns1_iperf.pcap` | iperf3 veth capture |
 | `scripts/gen_pcap.py` | Seven-frame regression pcap used by `make ci` |
 | `examples/` | Logs for the capture and for the regression |
+| `docs/logo.jpg` | Logo, dark |
+| `docs/logo-2.jpg` | Logo, light |
 | `docs/already-on-the-wire.md` | Comparison with chips that already forward |
+| `site/` | Project page, `site.xml`, and `sitemap.xml` |
 
 ## Regression
 
