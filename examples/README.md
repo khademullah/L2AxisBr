@@ -11,6 +11,8 @@ Two traces. `ns1_iperf.pcap` in the repository root is iperf3 on two NICs, and t
 | Host A | `192.168.1.1` | `02:00:00:00:00:01` | NIC A |
 | Host B | `192.168.1.2` | `ba:dc:18:c5:a2:89` | NIC B |
 
+![Transparent bridge: the source is saved, a missing destination floods out the other port](../docs/fig-bridge.svg)
+
 tcpdump ran on NIC A, so both directions are in one file. iperf3 was TCP from host A to host B. Frames whose on-wire length is larger than 2048 were cut by the snaplen (TSO bursts). The log prints both lengths, for example `2048 B (wire 65226)`. The bridge and the C model use the stored 2048 bytes. That length equals `MAX_B`, so those frames are learned and forwarded or filtered, not dropped.
 
 `make demo` checks the first 64 frames. Full logs:

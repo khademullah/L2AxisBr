@@ -12,6 +12,8 @@
   <header class="bar">
     <a class="brand" href="index.html">L2AxisBr</a>
     <nav>
+      <a href="#links">Links</a>
+      <a href="#bridge">Bridge</a>
       <a href="#frame">Frame</a>
       <a href="#learn">Learn</a>
       <a href="#flood">Flood</a>
@@ -26,6 +28,18 @@
       <p class="kicker">ns1_iperf.pcap · first 64 frames · port A</p>
       <h1>One capture, one step at a time</h1>
       <p class="lede">Both hosts in the file enter port A. The pictures below follow that run. Each one is a single fact from the log.</p>
+    </section>
+
+    <section class="step" id="links">
+      <h2>Two NICs</h2>
+      <p>Each NIC has one AXI-Stream into the bridge and one AXI-Stream out of it. A frame accepted on A is offered on B. A frame accepted on B is offered on A.</p>
+      <img src="fig-links.svg" alt="NIC A and NIC B, each with an AXI-Stream into pkt_l2br and an AXI-Stream out of it">
+    </section>
+
+    <section class="step" id="bridge">
+      <h2>The hop</h2>
+      <p>One picture of packet 1. The source is saved on port A. Host B is not in the table, so the frame floods out port B. Learning the source does not, by itself, send the frame.</p>
+      <img src="fig-bridge.svg" alt="Transparent bridge: host A is saved on port A, host B is not learned, and a miss floods out the other port">
     </section>
 
     <section class="step" id="frame">

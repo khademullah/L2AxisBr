@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 700" role="img" aria-labelledby="t d">
+  <title id="t">Transparent bridge</title>
+  <desc id="d">Host A is saved on port A. Host B is not learned yet, so the lookup misses and the frame floods out port B. A destination already on this port is not sent. Observers check the C table.</desc>
+  <rect width="1280" height="700" fill="#fefbf2"/>
+  <style>
+    .s { font-family: "Segoe UI", Calibri, sans-serif; fill: #1a2744; }
+    .m { font-family: ui-monospace, Consolas, monospace; fill: #1a2744; }
+    .d { fill: #4d5870; }
+  </style>
+  <text x="36" y="48" class="s" font-size="32">Transparent bridge</text>
+  <line x1="36" y1="64" x2="1244" y2="64" stroke="#1a2744" stroke-width="2"/>
+
+  <rect x="36" y="88" width="280" height="150" fill="none" stroke="#1a2744" stroke-dasharray="5 4"/>
+  <text x="52" y="120" class="m" font-size="14">dst = ba:dc:18:c5:a2:89</text>
+  <text x="52" y="146" class="m" font-size="14">src = 02:00:00:00:00:01</text>
+  <text x="52" y="172" class="m" font-size="14">ethertype = 0800</text>
+  <text x="52" y="198" class="m" font-size="14">payload = TCP</text>
+  <text x="52" y="224" class="s d" font-size="13">Packet 1. It floods.</text>
+
+  <rect x="360" y="88" width="500" height="430" fill="#fffdf8" stroke="#1a2744" stroke-width="1.6"/>
+  <text x="610" y="124" class="s" font-size="22" text-anchor="middle">pkt_l2br</text>
+  <text x="610" y="150" class="s d" font-size="14" text-anchor="middle">table, 1024 slots</text>
+  <rect x="400" y="166" width="420" height="28" fill="#efe8da"/>
+  <text x="416" y="185" class="s" font-size="15">port</text>
+  <text x="520" y="185" class="s" font-size="15">address</text>
+  <text x="416" y="220" class="m" font-size="16">A</text>
+  <text x="520" y="220" class="m" font-size="16">02:00:00:00:00:01</text>
+  <text x="416" y="252" class="m" font-size="16">B</text>
+  <text x="520" y="252" class="s d" font-size="16">not learned</text>
+
+  <line x1="390" y1="216" x2="410" y2="216" stroke="#1a2744"/>
+  <polygon points="410,216 400,211 400,221" fill="#1a2744"/>
+  <text x="390" y="206" class="s" font-size="13">populate</text>
+
+  <line x1="610" y1="280" x2="610" y2="360" stroke="#1a2744"/>
+  <polygon points="610,360 604,348 616,348" fill="#1a2744"/>
+  <text x="622" y="330" class="s" font-size="15">lookup</text>
+
+  <rect x="420" y="372" width="150" height="52" fill="#fefbf2" stroke="#1a2744"/>
+  <text x="495" y="404" class="s" font-size="18" text-anchor="middle">Port A</text>
+  <rect x="650" y="372" width="150" height="52" fill="#fefbf2" stroke="#1a2744"/>
+  <text x="725" y="404" class="s" font-size="18" text-anchor="middle">Port B</text>
+  <text x="380" y="460" class="s" font-size="15">A miss leaves on the other port.</text>
+  <text x="380" y="486" class="s" font-size="15">A hit on this port is not sent.</text>
+
+  <rect x="36" y="430" width="280" height="72" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="52" y="458" class="s" font-size="16">Host A</text>
+  <text x="52" y="482" class="m" font-size="14">02:00:00:00:00:01</text>
+  <rect x="36" y="518" width="280" height="72" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="52" y="546" class="s" font-size="16">Host B</text>
+  <text x="52" y="570" class="m" font-size="14">ba:dc:18:c5:a2:89</text>
+
+  <text x="900" y="130" class="s" font-size="18">The port is watched, and</text>
+  <text x="900" y="156" class="s" font-size="18">the source address is saved.</text>
+  <text x="900" y="204" class="s" font-size="18">The destination address</text>
+  <text x="900" y="230" class="s" font-size="18">is looked up.</text>
+  <text x="900" y="278" class="s" font-size="18">If no match is found, the</text>
+  <text x="900" y="304" class="s" font-size="18">frame is flooded out the</text>
+  <text x="900" y="330" class="s" font-size="18">other port.</text>
+  <text x="900" y="378" class="s" font-size="18">If the destination is already</text>
+  <text x="900" y="404" class="s" font-size="18">on this port, the frame is</text>
+  <text x="900" y="430" class="s" font-size="18">not sent.</text>
+  <text x="900" y="478" class="s" font-size="18">Observers sit on the wires.</text>
+  <text x="900" y="504" class="s" font-size="18">The C table must print the</text>
+  <text x="900" y="530" class="s" font-size="18">same result.</text>
+</svg>

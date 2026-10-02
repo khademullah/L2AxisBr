@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 560" role="img" aria-labelledby="t d">
+  <title id="t">Two NICs joined by the bridge</title>
+  <desc id="d">NIC A and NIC B each have one AXI-Stream into pkt_l2br and one AXI-Stream out of it. A frame accepted on A is offered on B, and the other way around.</desc>
+  <rect width="1400" height="560" fill="#fefbf2"/>
+  <style>
+    .s { font-family: "Segoe UI", Calibri, sans-serif; fill: #1a2744; }
+    .m { font-family: ui-monospace, Consolas, monospace; fill: #1a2744; }
+    .d { fill: #4d5870; }
+  </style>
+
+  <rect x="40" y="120" width="280" height="320" fill="#fffdf8" stroke="#1a2744" stroke-width="1.6"/>
+  <text x="180" y="190" class="s" font-size="30" text-anchor="middle">NIC A</text>
+  <text x="180" y="236" class="m" font-size="16" text-anchor="middle">02:00:00:00:00:01</text>
+  <text x="180" y="300" class="s d" font-size="18" text-anchor="middle">sends on a_s_*</text>
+  <text x="180" y="332" class="s d" font-size="18" text-anchor="middle">receives on a_m_*</text>
+  <text x="180" y="390" class="s" font-size="18" text-anchor="middle">port A</text>
+
+  <rect x="560" y="50" width="280" height="460" fill="#fffdf8" stroke="#1a2744" stroke-width="1.6"/>
+  <text x="700" y="100" class="s" font-size="28" text-anchor="middle">pkt_l2br</text>
+  <rect x="590" y="130" width="220" height="100" fill="#fefbf2" stroke="#1a2744"/>
+  <text x="700" y="174" class="s" font-size="22" text-anchor="middle">Port A</text>
+  <text x="700" y="204" class="m d" font-size="15" text-anchor="middle">a_s_*     a_m_*</text>
+  <rect x="590" y="270" width="220" height="100" fill="#fefbf2" stroke="#1a2744"/>
+  <text x="700" y="314" class="s" font-size="22" text-anchor="middle">Port B</text>
+  <text x="700" y="344" class="m d" font-size="15" text-anchor="middle">b_s_*     b_m_*</text>
+  <text x="700" y="430" class="s" font-size="16" text-anchor="middle">In on A leaves on B.</text>
+  <text x="700" y="458" class="s" font-size="16" text-anchor="middle">In on B leaves on A.</text>
+
+  <rect x="1080" y="120" width="280" height="320" fill="#fffdf8" stroke="#1a2744" stroke-width="1.6"/>
+  <text x="1220" y="190" class="s" font-size="30" text-anchor="middle">NIC B</text>
+  <text x="1220" y="236" class="m" font-size="16" text-anchor="middle">ba:dc:18:c5:a2:89</text>
+  <text x="1220" y="300" class="s d" font-size="18" text-anchor="middle">sends on b_s_*</text>
+  <text x="1220" y="332" class="s d" font-size="18" text-anchor="middle">receives on b_m_*</text>
+  <text x="1220" y="390" class="s" font-size="18" text-anchor="middle">port B</text>
+
+  <line x1="328" y1="210" x2="548" y2="210" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="548,210 534,202 534,218" fill="#1a2744"/>
+  <text x="438" y="198" class="s" font-size="15" text-anchor="middle">AXI-Stream in</text>
+
+  <line x1="548" y1="360" x2="328" y2="360" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="328,360 342,352 342,368" fill="#1a2744"/>
+  <text x="438" y="348" class="s" font-size="15" text-anchor="middle">AXI-Stream out</text>
+
+  <line x1="848" y1="210" x2="1072" y2="210" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="1072,210 1058,202 1058,218" fill="#1a2744"/>
+  <text x="960" y="198" class="s" font-size="15" text-anchor="middle">AXI-Stream out</text>
+
+  <line x1="1072" y1="360" x2="848" y2="360" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="848,360 862,352 862,368" fill="#1a2744"/>
+  <text x="960" y="348" class="s" font-size="15" text-anchor="middle">AXI-Stream in</text>
+</svg>
