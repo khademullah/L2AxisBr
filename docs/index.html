@@ -89,6 +89,11 @@
       <pre><code>[BR] rx_a=64  rx_b=0  tx_a=0  tx_b=1  flood=1  fwd=0  filter=63  drop=0  byte_mis=0  mis=0</code></pre>
       <p><code>SPLIT=1</code> places source <code>02:00:00:00:00:01</code> on port A and every other source on port B. After the opening flood, unicast traffic is forwarded.</p>
       <pre><code>[BR] rx_a=38  rx_b=26  tx_a=26  tx_b=38  flood=1  fwd=63  filter=0  drop=0  byte_mis=0  mis=0</code></pre>
+      <p><code>make nics</code> puts an example NIC on each port for that split. The recording below is the first 8 frames, slow enough to read. The bridge pane is the log. NIC A and NIC B are the same frames, written like a capture. Amber is a frame that NIC sent into the bridge. Blue is a frame that arrived from the bridge.</p>
+      <figure class="demo">
+        <img src="nics.gif" alt="Three terminals. The bridge floods the first frame from NIC A to NIC B, then forwards the return frame from NIC B to NIC A.">
+        <figcaption>First 8 frames of the two-NIC run. NIC A sent 5 and received 3. NIC B sent 3 and received 5. <code>mis=0</code>. <a href="nics.gif">The recording</a>.</figcaption>
+      </figure>
     </section>
 
     <section id="later">

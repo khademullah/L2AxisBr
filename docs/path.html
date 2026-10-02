@@ -81,6 +81,10 @@
       <h2>Split is a different run</h2>
       <p>Host A still enters port A. Host B enters port B. Packet 1 still floods, because host B is not installed yet. The other 63 frames are forwarded, not filtered.</p>
       <img src="fig-split.svg" alt="With split, host A is on port A and host B is on port B, and later frames are forwarded">
+      <figure class="demo">
+        <img src="nics.gif" alt="Three terminals. The bridge floods the first frame from NIC A to NIC B, then forwards the return frame from NIC B to NIC A.">
+        <figcaption>The same split with an example NIC on each port. The first 8 frames. Amber left that NIC. Blue arrived from the bridge. <a href="nics.gif">Recording</a>.</figcaption>
+      </figure>
     </section>
 
     <section class="step" id="rules">
