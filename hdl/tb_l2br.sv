@@ -1,6 +1,8 @@
 // Replay an offline pcap into pkt_l2br.
 // Default: every frame into port A. SPLIT=1 sends source MAC
 // 02:00:00:00:00:01 into A and every other source into B.
+// L2_NIC=1 inserts ex_nic on each port. The bench is the host behind
+// that NIC. NIC m_* drives the bridge slave. Bridge m_* drives NIC s_*.
 // Observers sit on the port wires. dpi/l2_model.c is the MAC-table twin.
 // Ingress fingerprint is get_fingerprint(); egress must match that sum.
 
@@ -64,6 +66,24 @@ module tb_l2br #(
     logic                b_tlast;
     logic [31:0]         b_tuser;
     logic                b_terr;
+
+    // Host side of each example NIC. Without L2_NIC these drive the bridge.
+    logic [DATA_W-1:0]   ha_tdata;
+    logic [KEEP_W-1:0]   ha_tkeep;
+    logic                ha_tvalid;
+    logic                ha_tready;
+    logic                ha_tstart;
+    logic                ha_tlast;
+    logic [31:0]         ha_tuser;
+    logic                ha_terr;
+    logic [DATA_W-1:0]   hb_tdata;
+    logic [KEEP_W-1:0]   hb_tkeep;
+    logic                hb_tvalid;
+    logic                hb_tready;
+    logic                hb_tstart;
+    logic                hb_tlast;
+    logic [31:0]         hb_tuser;
+    logic                hb_terr;
 
     logic [DATA_W-1:0]   a_m_tdata;
     logic [KEEP_W-1:0]   a_m_tkeep;
@@ -345,8 +365,77 @@ module tb_l2br #(
             bp_ready <= 1'b1;
     end
 
+`ifdef L2_NIC
+    // NIC A host is ha_*. Its wire transmit is the bridge port A slave.
+    // The bridge port A master is NIC A's wire receive. NIC B is the other link.
+    logic        nic_a_tx, nic_b_tx, nic_a_pkt, nic_b_pkt;
+    logic        nic_a_err, nic_b_err, nic_a_drop, nic_b_drop;
+    logic [31:0] nic_a_txb, nic_b_txb, nic_a_bytes, nic_b_bytes;
+    logic [31:0] nic_a_hash, nic_b_hash;
+    logic [15:0] nic_a_occ, nic_b_occ;
+    int          n_nic_a, n_nic_b, nic_sum_a, nic_sum_b;
+    int          n_nic_tx_a, n_nic_tx_b;
+
+    ex_nic #(.DATA_W(DATA_W)) u_nic_a (
+        .clk(clk), .rst_n(rst_n),
+        .h_tdata(ha_tdata), .h_tkeep(ha_tkeep),
+        .h_tvalid(ha_tvalid), .h_tready(ha_tready),
+        .h_tstart(ha_tstart), .h_tlast(ha_tlast),
+        .h_tuser(ha_tuser), .h_tuser_err(ha_terr),
+        .m_tdata(a_tdata), .m_tkeep(a_tkeep),
+        .m_tvalid(a_tvalid), .m_tready(a_tready),
+        .m_tstart(a_tstart), .m_tlast(a_tlast),
+        .m_tuser(a_tuser), .m_tuser_err(a_terr),
+        .s_tdata(a_m_tdata), .s_tkeep(a_m_tkeep),
+        .s_tvalid(a_m_tvalid), .s_tready(a_m_tready),
+        .s_tstart(a_m_tstart), .s_tlast(a_m_tlast),
+        .s_tuser(a_m_tuser), .s_tuser_err(a_m_terr),
+        .ready_mask(1'b1), .pause_en(1'b0),
+        .tx_pkt_valid(nic_a_tx), .tx_bytes(nic_a_txb),
+        .rx_pkt_valid(nic_a_pkt), .rx_bytes(nic_a_bytes),
+        .rx_hash(nic_a_hash), .rx_err(nic_a_err),
+        .rx_drop(nic_a_drop), .rx_occ(nic_a_occ)
+    );
+    ex_nic #(.DATA_W(DATA_W)) u_nic_b (
+        .clk(clk), .rst_n(rst_n),
+        .h_tdata(hb_tdata), .h_tkeep(hb_tkeep),
+        .h_tvalid(hb_tvalid), .h_tready(hb_tready),
+        .h_tstart(hb_tstart), .h_tlast(hb_tlast),
+        .h_tuser(hb_tuser), .h_tuser_err(hb_terr),
+        .m_tdata(b_tdata), .m_tkeep(b_tkeep),
+        .m_tvalid(b_tvalid), .m_tready(b_tready),
+        .m_tstart(b_tstart), .m_tlast(b_tlast),
+        .m_tuser(b_tuser), .m_tuser_err(b_terr),
+        .s_tdata(b_m_tdata), .s_tkeep(b_m_tkeep),
+        .s_tvalid(b_m_tvalid), .s_tready(b_m_tready),
+        .s_tstart(b_m_tstart), .s_tlast(b_m_tlast),
+        .s_tuser(b_m_tuser), .s_tuser_err(b_m_terr),
+        .ready_mask(1'b1), .pause_en(1'b0),
+        .tx_pkt_valid(nic_b_tx), .tx_bytes(nic_b_txb),
+        .rx_pkt_valid(nic_b_pkt), .rx_bytes(nic_b_bytes),
+        .rx_hash(nic_b_hash), .rx_err(nic_b_err),
+        .rx_drop(nic_b_drop), .rx_occ(nic_b_occ)
+    );
+`else
+    assign a_tdata   = ha_tdata;
+    assign a_tkeep   = ha_tkeep;
+    assign a_tvalid  = ha_tvalid;
+    assign a_tstart  = ha_tstart;
+    assign a_tlast   = ha_tlast;
+    assign a_tuser   = ha_tuser;
+    assign a_terr    = ha_terr;
+    assign ha_tready = a_tready;
+    assign b_tdata   = hb_tdata;
+    assign b_tkeep   = hb_tkeep;
+    assign b_tvalid  = hb_tvalid;
+    assign b_tstart  = hb_tstart;
+    assign b_tlast   = hb_tlast;
+    assign b_tuser   = hb_tuser;
+    assign b_terr    = hb_terr;
+    assign hb_tready = b_tready;
     assign a_m_tready = bp_ready;
     assign b_m_tready = bp_ready;
+`endif
 
     always @(posedge clk) begin
         if (rst_n && a_obs_valid) begin
@@ -393,6 +482,26 @@ module tb_l2br #(
             n_overlap = n_overlap + 1;
         if (rst_n && b_tvalid && b_tready && a_m_tvalid)
             n_overlap = n_overlap + 1;
+`ifdef L2_NIC
+        if (rst_n && nic_a_tx) begin
+            n_nic_tx_a = n_nic_tx_a + 1;
+            $display("[NIC] A sent %0d B into the bridge", nic_a_txb);
+        end
+        if (rst_n && nic_b_tx) begin
+            n_nic_tx_b = n_nic_tx_b + 1;
+            $display("[NIC] B sent %0d B into the bridge", nic_b_txb);
+        end
+        if (rst_n && nic_a_pkt) begin
+            n_nic_a   = n_nic_a + 1;
+            nic_sum_a = nic_sum_a + int'(nic_a_bytes);
+            $display("[NIC] A received %0d B from the bridge", nic_a_bytes);
+        end
+        if (rst_n && nic_b_pkt) begin
+            n_nic_b   = n_nic_b + 1;
+            nic_sum_b = nic_sum_b + int'(nic_b_bytes);
+            $display("[NIC] B received %0d B from the bridge", nic_b_bytes);
+        end
+`endif
         if (rst_n)
             l2_tick();
     end
@@ -402,33 +511,33 @@ module tb_l2br #(
         for (i = 0; i < len; i = i + KEEP_W) begin
             @(negedge clk);
             if (port == 0) begin
-                a_tdata  = '0;
-                a_tkeep  = '0;
+                ha_tdata  = '0;
+                ha_tkeep  = '0;
                 for (k = 0; k < KEEP_W; k = k + 1) begin
                     if ((i + k) < len) begin
-                        a_tdata[8*k +: 8] = frm[i + k];
-                        a_tkeep[k]        = 1'b1;
+                        ha_tdata[8*k +: 8] = frm[i + k];
+                        ha_tkeep[k]        = 1'b1;
                     end
                 end
-                a_tvalid = 1'b1;
-                a_tstart = (i == 0);
-                a_tlast  = ((i + KEEP_W) >= len);
-                a_tuser  = packet_count;
-                a_terr   = 1'b0;
+                ha_tvalid = 1'b1;
+                ha_tstart = (i == 0);
+                ha_tlast  = ((i + KEEP_W) >= len);
+                ha_tuser  = packet_count;
+                ha_terr   = 1'b0;
             end else begin
-                b_tdata  = '0;
-                b_tkeep  = '0;
+                hb_tdata  = '0;
+                hb_tkeep  = '0;
                 for (k = 0; k < KEEP_W; k = k + 1) begin
                     if ((i + k) < len) begin
-                        b_tdata[8*k +: 8] = use_b_buf ? frm_b[i + k] : frm[i + k];
-                        b_tkeep[k]        = 1'b1;
+                        hb_tdata[8*k +: 8] = use_b_buf ? frm_b[i + k] : frm[i + k];
+                        hb_tkeep[k]        = 1'b1;
                     end
                 end
-                b_tvalid = 1'b1;
-                b_tstart = (i == 0);
-                b_tlast  = ((i + KEEP_W) >= len);
-                b_tuser  = packet_count;
-                b_terr   = 1'b0;
+                hb_tvalid = 1'b1;
+                hb_tstart = (i == 0);
+                hb_tlast  = ((i + KEEP_W) >= len);
+                hb_tuser  = packet_count;
+                hb_terr   = 1'b0;
             end
             spins = 0;
             do begin
@@ -436,22 +545,32 @@ module tb_l2br #(
                 spins = spins + 1;
                 if (spins > 200000)
                     $fatal(1, "[BR] tready stuck on port %s", (port != 0) ? "B" : "A");
-            end while (port == 0 ? !a_tready : !b_tready);
+            end while (port == 0 ? !ha_tready : !hb_tready);
         end
         @(negedge clk);
         if (port == 0) begin
-            a_tvalid = 1'b0;
-            a_tstart = 1'b0;
-            a_tlast  = 1'b0;
-            a_tdata  = '0;
-            a_tkeep  = '0;
+            ha_tvalid = 1'b0;
+            ha_tstart = 1'b0;
+            ha_tlast  = 1'b0;
+            ha_tdata  = '0;
+            ha_tkeep  = '0;
         end else begin
-            b_tvalid = 1'b0;
-            b_tstart = 1'b0;
-            b_tlast  = 1'b0;
-            b_tdata  = '0;
-            b_tkeep  = '0;
+            hb_tvalid = 1'b0;
+            hb_tstart = 1'b0;
+            hb_tlast  = 1'b0;
+            hb_tdata  = '0;
+            hb_tkeep  = '0;
         end
+`ifdef L2_NIC
+        // h_tready stays low until the NIC has handed every beat to the bridge.
+        spins = 0;
+        do begin
+            @(posedge clk);
+            spins = spins + 1;
+            if (spins > 200000)
+                $fatal(1, "[NIC] port %s did not finish sending", (port != 0) ? "B" : "A");
+        end while (port == 0 ? !ha_tready : !hb_tready);
+`endif
     endtask
 
     initial begin
@@ -472,20 +591,20 @@ module tb_l2br #(
 
         clk          = 1'b0;
         rst_n        = 1'b0;
-        a_tdata      = '0;
-        a_tkeep      = '0;
-        a_tvalid     = 1'b0;
-        a_tstart     = 1'b0;
-        a_tlast      = 1'b0;
-        a_tuser      = '0;
-        a_terr       = 1'b0;
-        b_tdata      = '0;
-        b_tkeep      = '0;
-        b_tvalid     = 1'b0;
-        b_tstart     = 1'b0;
-        b_tlast      = 1'b0;
-        b_tuser      = '0;
-        b_terr       = 1'b0;
+        ha_tdata     = '0;
+        ha_tkeep     = '0;
+        ha_tvalid    = 1'b0;
+        ha_tstart    = 1'b0;
+        ha_tlast     = 1'b0;
+        ha_tuser     = '0;
+        ha_terr      = 1'b0;
+        hb_tdata     = '0;
+        hb_tkeep     = '0;
+        hb_tvalid    = 1'b0;
+        hb_tstart    = 1'b0;
+        hb_tlast     = 1'b0;
+        hb_tuser     = '0;
+        hb_terr      = 1'b0;
         bp_arg       = 0;
         pause_arg    = 0;
         split_arg    = 0;
@@ -507,6 +626,10 @@ module tb_l2br #(
         cur_len      = 0;
         cur_port     = 0;
         n_rx_a = 0; n_rx_b = 0; n_tx_a = 0; n_tx_b = 0;
+`ifdef L2_NIC
+        n_nic_a = 0; n_nic_b = 0; nic_sum_a = 0; nic_sum_b = 0;
+        n_nic_tx_a = 0; n_nic_tx_b = 0;
+`endif
         n_flood = 0; n_fwd = 0; n_filter = 0; n_drop = 0;
         n_mis = 0; n_byte_mis = 0; n_overlap = 0;
         qa_h = 0; qa_t = 0; qa_n = 0;
@@ -698,6 +821,14 @@ module tb_l2br #(
         $display("[BR] rx_a=%0d  rx_b=%0d  tx_a=%0d  tx_b=%0d  flood=%0d  fwd=%0d  filter=%0d  drop=%0d  byte_mis=%0d  mis=%0d",
                  n_rx_a, n_rx_b, n_tx_a, n_tx_b, n_flood, n_fwd, n_filter, n_drop,
                  n_byte_mis, n_mis);
+`ifdef L2_NIC
+        $display("[NIC] A sent=%0d  A received=%0d (%0d B)  B sent=%0d  B received=%0d (%0d B)",
+                 n_nic_tx_a, n_nic_a, nic_sum_a, n_nic_tx_b, n_nic_b, nic_sum_b);
+        if (n_nic_tx_a != n_rx_a || n_nic_tx_b != n_rx_b)
+            $fatal(1, "[NIC] sent count does not match bridge ingress");
+        if (n_nic_a != n_tx_a || n_nic_b != n_tx_b)
+            $fatal(1, "[NIC] received count does not match bridge egress");
+`endif
         if (n_mis != 0 || n_byte_mis != 0)
             $fatal(1, "[BR] scoreboard failed");
         $finish;

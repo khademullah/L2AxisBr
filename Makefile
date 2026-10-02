@@ -6,10 +6,14 @@ WAVE_VIEWER = gtkwave
 
 HDL_DIR = hdl
 DPI_DIR = dpi
+NIC ?= 0
 SV_SOURCES = \
 	$(HDL_DIR)/tb_l2br.sv \
 	$(HDL_DIR)/pkt_l2br.sv \
 	$(HDL_DIR)/pkt_l2_obs.sv
+ifeq ($(NIC),1)
+SV_SOURCES += $(HDL_DIR)/ex_nic.sv
+endif
 C_SOURCES = \
 	$(DPI_DIR)/pcap_reader.c \
 	$(DPI_DIR)/l2_model.c
@@ -31,6 +35,9 @@ FILTER ?=
 AXIS_W ?= 8
 
 VERILATOR_FLAGS = --binary --timing --trace -j 0 --top-module $(TOP_MODULE) -GDATA_W=$(AXIS_W)
+ifeq ($(NIC),1)
+VERILATOR_FLAGS += -DL2_NIC
+endif
 LDFLAGS = -LDFLAGS "-lpcap"
 
 .PHONY: all
@@ -143,6 +150,13 @@ ci:
 	grep -q "rx_a=731  rx_b=269  tx_a=269  tx_b=731  flood=1  fwd=999  filter=0  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
 	cp $(LOG_FILE) examples/ci_iperf_1000_split.log
 
+.PHONY: nics
+nics:
+	$(MAKE) run NIC=1 PCAP=ns1_iperf.pcap MAX_PACKETS=64 BP=2 SPLIT=1
+	grep -q "rx_a=38  rx_b=26  tx_a=26  tx_b=38  flood=1  fwd=63  filter=0  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
+	grep -q "\\[NIC\\] A sent=38  A received=26" $(LOG_FILE)
+	grep -q "B sent=26  B received=38" $(LOG_FILE)
+
 .PHONY: demo
 demo:
 	$(MAKE) run PCAP=ns1_iperf.pcap MAX_PACKETS=64 BP=2
@@ -169,6 +183,7 @@ clean:
 .PHONY: help
 help:
 	@echo "  make demo                       - ns1_iperf.pcap, port A then SPLIT=1"
+	@echo "  make nics                       - two example NICs, one host on each port"
 	@echo "  make PCAP=ns1_iperf.pcap MAX_PACKETS=64 BP=2"
 	@echo "  make PCAP=ns1_iperf.pcap MAX_PACKETS=64 BP=2 SPLIT=1"
 	@echo "  make ci                         - regression, including an 8-byte drop"

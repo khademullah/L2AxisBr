@@ -36,6 +36,29 @@ Split. `02:00:00:00:00:01` enters A (38 frames) and `ba:dc:18:c5:a2:89` enters B
 
 `tx_b` equals `rx_a` and `tx_a` equals `rx_b`: on this window every accepted frame leaves the other port.
 
+`make nics` puts one example NIC (`hdl/ex_nic.sv`) on each port and replays this same 64-frame split. The pcap is the host behind the NIC. NIC A sends into port A and receives what the bridge sends out port A. NIC B does the same on port B. Host A's frames show up as `[NIC] B received`. Host B's frames show up as `[NIC] A received`.
+
+```
+make nics
+```
+
+```
+[NIC] A sent=38  A received=26 (1736 B)  B sent=26  B received=38 (58221 B)
+```
+
+The two NICs are connected, and every forwarded frame arrives on the other one. The receive line is printed when the last byte lands, so it often sits under the next packet header. Pair a send with the later receive of the same length:
+
+| What left | What arrived |
+|---|---|
+| Packet 1, NIC A sent 74 B, bridge flooded | NIC B received 74 B |
+| Packet 2, NIC B sent 74 B, bridge forwarded | NIC A received 74 B |
+| Packet 3, NIC A sent 66 B | NIC B received 66 B |
+| Packet 4, NIC A sent 103 B | NIC B received 103 B |
+
+A 2048-byte frame takes longer to leave the bridge, so its receive line shows up a couple of headers later. Packet 20 is NIC A sending 2048 B. NIC B receives that 2048 B while packet 22 is already being announced. The 66 B receive next to it is packet 21, which NIC B had just sent.
+
+The totals close the loop. NIC A sent 38 frames and NIC B received 38 (58,221 bytes). NIC B sent 26 frames and NIC A received 26 (1,736 bytes). That matches `tx_b=38` and `tx_a=26`, with `byte_mis=0` and `mis=0`.
+
 The whole file, both ways. `BP=2` stalls `tready` and does not change the counts. Logs: [ci_iperf_1000.log](ci_iperf_1000.log), [ci_iperf_1000_split.log](ci_iperf_1000_split.log).
 
 ```bash
