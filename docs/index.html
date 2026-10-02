@@ -82,6 +82,10 @@
       <h2>The gate is mis=0</h2>
       <p><code>pkt_l2br</code> and <code>dpi/l2_model.c</code> share one 1024-entry table. Observers sit on the port wires. <code>mis</code> counts a decision, length, or fingerprint that disagrees. <code>byte_mis</code> counts an egress frame that disagrees with the ingress frame that was forwarded.</p>
       <p>Both directions of <code>ns1_iperf.pcap</code> enter port A. The first frame floods. Both MACs are then known on A, so the rest of that window is filtered.</p>
+      <figure class="demo">
+        <img src="demo.gif" alt="make run on the first 8 frames: packet 1 floods, the next frames are filtered, mis=0">
+        <figcaption><a href="demo.gif">Terminal recording</a> of <code>make run PCAP=ns1_iperf.pcap MAX_PACKETS=8 BP=2</code>. The <a href="demo.cast">asciinema cast</a> is the same log.</figcaption>
+      </figure>
       <pre><code>[BR] rx_a=64  rx_b=0  tx_a=0  tx_b=1  flood=1  fwd=0  filter=63  drop=0  byte_mis=0  mis=0</code></pre>
       <p><code>SPLIT=1</code> places source <code>02:00:00:00:00:01</code> on port A and every other source on port B. After the opening flood, unicast traffic is forwarded.</p>
       <pre><code>[BR] rx_a=38  rx_b=26  tx_a=26  tx_b=38  flood=1  fwd=63  filter=0  drop=0  byte_mis=0  mis=0</code></pre>

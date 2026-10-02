@@ -56,6 +56,10 @@
       <h2>The first 64 frames</h2>
       <p>One frame floods. The other 63 are filtered. Nothing is dropped, and nothing is forwarded. <code>rx_a=64</code>, <code>tx_b=1</code>, and <code>mis=0</code>. The C table prints the same counts.</p>
       <img src="fig-counts.svg" alt="1 flood, 63 filters, mis = 0">
+      <figure class="demo">
+        <img src="demo.gif" alt="make run on the first 8 frames: packet 1 floods, the next frames are filtered, mis=0">
+        <figcaption>The same tracking, from <code>make run</code>, on the first 8 frames. <a href="demo.cast">Asciinema cast</a>.</figcaption>
+      </figure>
       <pre><code>[BR] rx_a=64  rx_b=0  tx_a=0  tx_b=1  flood=1  fwd=0  filter=63  drop=0  byte_mis=0  mis=0</code></pre>
     </section>
 

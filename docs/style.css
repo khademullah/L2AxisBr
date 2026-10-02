@@ -123,12 +123,15 @@ h1 {
 
 section { padding: 0 8vw 2.6rem; }
 
-.step img {
+.step img, .demo img {
   width: 100%;
   height: auto;
   margin-top: 0.9rem;
   border: 1px solid var(--line);
 }
+
+.demo { margin: 1.1rem 0 0; }
+.demo figcaption { margin-top: 0.55rem; color: var(--muted); font-size: 0.95rem; }
 
 section p + p, section p + pre, section pre + p, section p + ol { margin-top: 0.9rem; }
 
