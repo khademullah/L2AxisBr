@@ -96,15 +96,7 @@ Each ingress port is the [`nic_rx`](https://github.com/khademullah/Pcap2HDL) sla
 
 ## Data path
 
-```
-ns1_iperf.pcap
-    -> libpcap (dpi/pcap_reader.c: open, BPF, caplen, fingerprint)
-    -> tb_l2br AXI-Stream master
-         |- pkt_l2_obs   slave wires, port A and port B
-         |- pkt_l2br     learn / flood / forward / filter
-         `- pkt_l2_obs   master wires, port A and port B
-    dpi/l2_model.c scores the same MAC table
-```
+The first 64 frames are drawn one step at a time in [docs/path.html](docs/path.html).
 
 File format and BPF stay in C. The MAC table and the datapath are clocked SystemVerilog. Default width is 8 bits. `AXIS_W=64` packs eight bytes per beat.
 

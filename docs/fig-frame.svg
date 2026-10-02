@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 280" role="img" aria-labelledby="t d">
+  <title id="t">Packet 1</title>
+  <desc id="d">Destination ba:dc:18:c5:a2:89, source 02:00:00:00:00:01, ethertype 0800, 74 bytes. This frame floods.</desc>
+  <rect width="1000" height="280" fill="#fefbf2"/>
+  <style>
+    .s { font-family: "Segoe UI", Calibri, sans-serif; fill: #1a2744; }
+    .m { font-family: ui-monospace, Consolas, monospace; fill: #1a2744; }
+    .d { fill: #4d5870; }
+  </style>
+  <rect x="80" y="36" width="840" height="208" fill="none" stroke="#1a2744" stroke-dasharray="6 5"/>
+  <text x="110" y="84" class="m" font-size="26">dst = ba:dc:18:c5:a2:89</text>
+  <text x="110" y="124" class="m" font-size="26">src = 02:00:00:00:00:01</text>
+  <text x="110" y="164" class="m" font-size="26">ethertype = 0800 IPv4</text>
+  <text x="110" y="204" class="m" font-size="26">length = 74 bytes</text>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240" role="img" aria-labelledby="t d">
+  <title id="t">First 64 frames</title>
+  <desc id="d">One flood, 63 filters, mis = 0. rx_a = 64 and tx_b = 1.</desc>
+  <rect width="1000" height="240" fill="#fefbf2"/>
+  <style>
+    .s { font-family: "Segoe UI", Calibri, sans-serif; fill: #1a2744; }
+    .d { fill: #4d5870; }
+  </style>
+  <rect x="40" y="36" width="280" height="168" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="180" y="110" class="s" font-size="56" text-anchor="middle">1</text>
+  <text x="180" y="160" class="s d" font-size="22" text-anchor="middle">flood</text>
+  <rect x="360" y="36" width="280" height="168" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="500" y="110" class="s" font-size="56" text-anchor="middle">63</text>
+  <text x="500" y="160" class="s d" font-size="22" text-anchor="middle">filters</text>
+  <rect x="680" y="36" width="280" height="168" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="820" y="110" class="s" font-size="56" text-anchor="middle">0</text>
+  <text x="820" y="160" class="s d" font-size="22" text-anchor="middle">mis</text>
+</svg>

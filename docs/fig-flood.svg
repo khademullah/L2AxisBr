@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" role="img" aria-labelledby="t d">
+  <title id="t">Lookup miss floods out port B</title>
+  <desc id="d">ba:dc:18:c5:a2:89 is not a table row. Packet 1 enters port A and floods out port B.</desc>
+  <rect width="1000" height="300" fill="#fefbf2"/>
+  <style>
+    .s { font-family: "Segoe UI", Calibri, sans-serif; fill: #1a2744; }
+    .m { font-family: ui-monospace, Consolas, monospace; fill: #1a2744; }
+    .d { fill: #4d5870; }
+  </style>
+  <rect x="40" y="90" width="240" height="100" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="160" y="148" class="s" font-size="26" text-anchor="middle">Port A in</text>
+  <line x1="290" y1="140" x2="390" y2="140" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="390,140 376,132 376,148" fill="#1a2744"/>
+  <rect x="400" y="70" width="220" height="140" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="510" y="130" class="s" font-size="24" text-anchor="middle">lookup</text>
+  <text x="510" y="168" class="s d" font-size="20" text-anchor="middle">no row</text>
+  <line x1="630" y1="140" x2="730" y2="140" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="730,140 716,132 716,148" fill="#1a2744"/>
+  <rect x="740" y="90" width="220" height="100" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="850" y="148" class="s" font-size="26" text-anchor="middle">Port B out</text>
+  <text x="500" y="260" class="m" font-size="20" text-anchor="middle">ba:dc:18:c5:a2:89 is not stored</text>
+</svg>

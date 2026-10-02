@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 280" role="img" aria-labelledby="t d">
+  <title id="t">Source saved on port A</title>
+  <desc id="d">Packet 1 saves 02:00:00:00:00:01 on port A. That is the only row after this frame.</desc>
+  <rect width="1000" height="280" fill="#fefbf2"/>
+  <style>
+    .s { font-family: "Segoe UI", Calibri, sans-serif; fill: #1a2744; }
+    .m { font-family: ui-monospace, Consolas, monospace; fill: #1a2744; }
+    .d { fill: #4d5870; }
+  </style>
+  <rect x="40" y="70" width="340" height="140" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="64" y="120" class="s" font-size="22">Host A source</text>
+  <text x="64" y="164" class="m" font-size="22">02:00:00:00:00:01</text>
+  <line x1="390" y1="140" x2="500" y2="140" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="500,140 486,132 486,148" fill="#1a2744"/>
+  <text x="400" y="124" class="s" font-size="18">populate</text>
+  <rect x="520" y="48" width="440" height="184" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="544" y="88" class="s d" font-size="18">one row of 1024, port A</text>
+  <rect x="544" y="108" width="392" height="36" fill="#efe8da"/>
+  <text x="560" y="132" class="s" font-size="18">port</text>
+  <text x="680" y="132" class="s" font-size="18">address</text>
+  <text x="560" y="184" class="m" font-size="22">A</text>
+  <text x="680" y="184" class="m" font-size="22">02:00:00:00:00:01</text>
+</svg>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>L2AxisBr — first 64 frames</title>
+  <meta name="description" content="Packet 1 floods. Packet 2 is filtered. Of the first 64 frames, one floods and 63 are filtered.">
+  <link rel="icon" href="logo.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="index.html">L2AxisBr</a>
+    <nav>
+      <a href="#frame">Frame</a>
+      <a href="#learn">Learn</a>
+      <a href="#flood">Flood</a>
+      <a href="#filter">Filter</a>
+      <a href="#counts">Counts</a>
+      <a href="#split">Split</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="kicker">ns1_iperf.pcap · first 64 frames · port A</p>
+      <h1>One capture, one step at a time</h1>
+      <p class="lede">Both hosts in the file enter port A. The pictures below follow that run. Each one is a single fact from the log.</p>
+    </section>
+
+    <section class="step" id="frame">
+      <h2>Packet 1</h2>
+      <p>The first frame is 74 bytes of IPv4. The source is host A. The destination is host B.</p>
+      <img src="fig-frame.svg" alt="Packet 1: destination ba:dc:18:c5:a2:89, source 02:00:00:00:00:01, ethertype 0800, 74 bytes">
+    </section>
+
+    <section class="step" id="learn">
+      <h2>The source is saved</h2>
+      <p>A unicast source is written on the port that received it. After packet 1 the table holds one row: <code>02:00:00:00:00:01</code> on port A. The table has 1024 slots. This run fills one of them.</p>
+      <img src="fig-learn.svg" alt="Host A source 02:00:00:00:00:01 is stored on port A">
+    </section>
+
+    <section class="step" id="flood">
+      <h2>The destination is missing</h2>
+      <p><code>ba:dc:18:c5:a2:89</code> is not a row. The lookup misses, so packet 1 is flooded out port B. Port B is the exit for this frame, not a second copy of the same input.</p>
+      <img src="fig-flood.svg" alt="Packet 1 enters port A, misses the table, and floods out port B">
+    </section>
+
+    <section class="step" id="filter">
+      <h2>Packet 2 is the return frame</h2>
+      <p>Learning uses the source. Sending uses the destination. The source is host B, so that address is saved on port A. The destination is host A, and host A is already on port A, the port this frame came in on. Port B is the only other exit, and host A is not there, so the frame is not sent.</p>
+      <img src="fig-filter.svg" alt="Packet 2: destination is host A, already on port A, so the frame is filtered and not sent. Source host B is saved on port A.">
+    </section>
+
+    <section class="step" id="counts">
+      <h2>The first 64 frames</h2>
+      <p>One frame floods. The other 63 are filtered. Nothing is dropped, and nothing is forwarded. <code>rx_a=64</code>, <code>tx_b=1</code>, and <code>mis=0</code>. The C table prints the same counts.</p>
+      <img src="fig-counts.svg" alt="1 flood, 63 filters, mis = 0">
+      <pre><code>[BR] rx_a=64  rx_b=0  tx_a=0  tx_b=1  flood=1  fwd=0  filter=63  drop=0  byte_mis=0  mis=0</code></pre>
+    </section>
+
+    <section class="step" id="split">
+      <h2>Split is a different run</h2>
+      <p>Host A still enters port A. Host B enters port B. Packet 1 still floods, because host B is not installed yet. The other 63 frames are forwarded, not filtered.</p>
+      <img src="fig-split.svg" alt="With split, host A is on port A and host B is on port B, and later frames are forwarded">
+    </section>
+
+    <section class="step" id="rules">
+      <h2>What this run does not do</h2>
+      <p>A beat counts only when <code>tvalid</code> and <code>tready</code> are both high. A frame under 12 bytes or over 2048 is dropped, and nothing is learned. Aging is off, so the new entry stays. A frame is forwarded only when its destination is already known on the other port. STP, LAG, and QinQ stay out.</p>
+      <p><a href="index.html">Back to the project page</a></p>
+    </section>
+  </main>
+
+  <footer>
+    <p>MIT. <a href="https://github.com/khademullah/L2AxisBr">khademullah/L2AxisBr</a></p>
+  </footer>
+</body>
+</html>

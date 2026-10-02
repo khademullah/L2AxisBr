@@ -1,6 +1,6 @@
 # Examples
 
-Two traces. `ns1_iperf.pcap` in the repository root is iperf3 on two NICs, and the file `make demo` replays. `ci.pcap` is produced by `scripts/gen_pcap.py` when you run `make ci` and is not committed.
+Two traces. `ns1_iperf.pcap` in the repository root is iperf3 on two NICs, and the file `make demo` replays. `ci.pcap` is produced by `scripts/gen_pcap.py` when you run `make ci` and is not committed. The same run is drawn one step at a time in [docs/path.html](../docs/path.html).
 
 ## iperf3 on two NICs
 

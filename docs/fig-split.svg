@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 280" role="img" aria-labelledby="t d">
+  <title id="t">Split puts each host on its own port</title>
+  <desc id="d">A frame from host A on port A is forwarded out port B. A frame from host B on port B is forwarded out port A.</desc>
+  <rect width="1000" height="280" fill="#fefbf2"/>
+  <style>
+    .s { font-family: "Segoe UI", Calibri, sans-serif; fill: #1a2744; }
+    .m { font-family: ui-monospace, Consolas, monospace; fill: #1a2744; }
+    .d { fill: #4d5870; }
+  </style>
+  <rect x="30" y="36" width="280" height="80" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="170" y="84" class="s" font-size="22" text-anchor="middle">Host A on port A</text>
+  <line x1="320" y1="76" x2="430" y2="76" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="430,76 416,68 416,84" fill="#1a2744"/>
+  <text x="375" y="64" class="s d" font-size="16" text-anchor="middle">forward</text>
+  <rect x="440" y="36" width="240" height="80" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="560" y="84" class="s" font-size="22" text-anchor="middle">out port B</text>
+  <rect x="30" y="164" width="280" height="80" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="170" y="212" class="s" font-size="22" text-anchor="middle">Host B on port B</text>
+  <line x1="320" y1="204" x2="430" y2="204" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="430,204 416,196 416,212" fill="#1a2744"/>
+  <text x="375" y="192" class="s d" font-size="16" text-anchor="middle">forward</text>
+  <rect x="440" y="164" width="240" height="80" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="560" y="212" class="s" font-size="22" text-anchor="middle">out port A</text>
+</svg>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 320" role="img" aria-labelledby="t d">
+  <title id="t">Packet 2 is filtered</title>
+  <desc id="d">The return frame has source ba:dc:18:c5:a2:89 and destination 02:00:00:00:00:01. Both end up on port A. The destination is already on this port, so the frame is not sent.</desc>
+  <rect width="1100" height="320" fill="#fefbf2"/>
+  <style>
+    .s { font-family: "Segoe UI", Calibri, sans-serif; fill: #1a2744; }
+    .m { font-family: ui-monospace, Consolas, monospace; fill: #1a2744; }
+    .d { fill: #4d5870; }
+  </style>
+  <rect x="24" y="28" width="340" height="264" fill="none" stroke="#1a2744" stroke-dasharray="6 5"/>
+  <text x="44" y="68" class="s d" font-size="16">packet 2, 74 bytes</text>
+  <text x="44" y="112" class="m" font-size="16">dst 02:00:00:00:00:01</text>
+  <text x="44" y="148" class="m" font-size="16">src ba:dc:18:c5:a2:89</text>
+  <text x="44" y="200" class="s" font-size="18">Destination is host A.</text>
+  <text x="44" y="230" class="s" font-size="18">Source is host B.</text>
+  <line x1="372" y1="160" x2="430" y2="160" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="430,160 416,152 416,168" fill="#1a2744"/>
+  <rect x="444" y="28" width="360" height="264" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="464" y="64" class="s d" font-size="16">both rows are port A</text>
+  <text x="464" y="110" class="m" font-size="16">A  02:00:00:00:00:01</text>
+  <text x="464" y="138" class="s d" font-size="15">already on this port</text>
+  <text x="464" y="184" class="m" font-size="16">A  ba:dc:18:c5:a2:89</text>
+  <text x="464" y="212" class="s d" font-size="15">saved from this source</text>
+  <line x1="812" y1="160" x2="870" y2="160" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="870,160 856,152 856,168" fill="#1a2744"/>
+  <rect x="884" y="78" width="192" height="164" fill="#fffdf8" stroke="#1a2744"/>
+  <text x="980" y="140" class="s" font-size="26" text-anchor="middle">Filter</text>
+  <text x="980" y="178" class="s d" font-size="16" text-anchor="middle">This frame</text>
+  <text x="980" y="202" class="s d" font-size="16" text-anchor="middle">is not sent.</text>
+</svg>

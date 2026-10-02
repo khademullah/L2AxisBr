@@ -132,8 +132,9 @@
 [BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
 
 [SV] Simulation finished. File=ns1_iperf.pcap  Streamed 64 packets.
+[BR] overlap=54863
 [BR] rx_a=38  rx_b=26  tx_a=26  tx_b=38  flood=1  fwd=63  filter=0  drop=0  byte_mis=0  mis=0
-- hdl/tb_l2br.sv:554: Verilog $finish
+- hdl/tb_l2br.sv:703: Verilog $finish
 - S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
-- Verilator: $finish at 2ms; walltime 3.367 s; speed 696.367 us/s
-- Verilator: cpu 3.357 s on 1 threads; alloced 25 MB
+- Verilator: $finish at 1ms; walltime 0.938 s; speed 1.348 ms/s
+- Verilator: cpu 0.922 s on 1 threads; alloced 25 MB
