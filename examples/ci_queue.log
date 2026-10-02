@@ -1,0 +1,18 @@
+[SV] Opening queue.pcap
+[C-DPI] Successfully opened queue.pcap
+[SV] Datalink DLT=1 (Ethernet)
+[SV] Streaming up to 8 packets into port A
+[SV] Packet #1 port A  34 B (wire 34) ts=1.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000001
+[SV] Packet #2 port A  34 B (wire 34) ts=2.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000002
+
+[SV] Reached end of PCAP before hitting the packet cap.
+
+[SV] Simulation finished. File=queue.pcap  Streamed 2 packets.
+[BR] overlap=31
+[BR] rx_a=2  rx_b=0  tx_a=0  tx_b=2  flood=2  fwd=0  filter=0  drop=0  byte_mis=0  mis=0
+- hdl/tb_l2br.sv:703: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 1us; walltime 0.001 s; speed 787.787 us/s
+- Verilator: cpu 0.001 s on 1 threads; alloced 25 MB

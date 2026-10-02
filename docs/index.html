@@ -44,6 +44,7 @@
     <a class="brand" href="#top">L2AxisBr</a>
     <nav>
       <a href="#gate">Gate</a>
+      <a href="#later">Later</a>
       <a href="#start">Start</a>
       <a href="https://github.com/khademullah/L2AxisBr">GitHub</a>
     </nav>
@@ -85,11 +86,28 @@
       <pre><code>[BR] rx_a=38  rx_b=26  tx_a=26  tx_b=38  flood=1  fwd=63  filter=0  drop=0  byte_mis=0  mis=0</code></pre>
     </section>
 
+    <section id="later">
+      <h2>Later</h2>
+      <p>These ten are in the regression. Each one lands in the SystemVerilog table and the C table, and <code>mis=0</code> stays the gate. STP, LAG, and QinQ stay out.</p>
+      <ol>
+        <li><strong>Aging.</strong> Supported. <code>AGE=N</code> expires an entry after N clocks. The next unicast to that MAC floods.</li>
+        <li><strong>Station move in the regression.</strong> Supported. A source learned on A and then seen on B is updated, and <code>make ci</code> checks the forward.</li>
+        <li><strong>Both ports in one cycle.</strong> Supported. <code>BOTH=1</code> offers a beat on A and B together.</li>
+        <li><strong>More than one frame in the ingress buffer.</strong> Supported. The next frame can enter while the previous one is still leaving.</li>
+        <li><strong>Ethernet lengths.</strong> Supported. <code>LEN=1</code> is 64 to 1518. <code>LEN=2</code> is 64 to 9000. The 12-to-2048 rule stays the default.</li>
+        <li><strong>One VLAN.</strong> Supported. Learn the source with its 802.1Q VID. Flood and filter stay inside that VID.</li>
+        <li><strong>Slot compare.</strong> Supported. Every table entry is checked against the C table.</li>
+        <li><strong>The whole capture.</strong> Supported. <code>make ci</code> replays all 1000 frames of the iperf pcap.</li>
+        <li><strong>Other widths.</strong> Supported. The same pcaps pass at 32, 128, and 256 bits, along with 8 and 64.</li>
+        <li><strong>A static multicast table.</strong> Supported. <code>MCAST=1</code> installs one group on port B. An unknown group still floods.</li>
+      </ol>
+    </section>
+
     <section id="start">
       <h2>Quick start</h2>
-      <p>Linux, Verilator 5.032 or later, and libpcap.</p>
+      <p>Linux, Verilator 5.020 or later, and libpcap.</p>
       <pre><code>sudo apt update
-sudo apt install build-essential libpcap-dev
+sudo apt install build-essential verilator libpcap-dev
 make demo</code></pre>
       <p>The worked capture is iperf3 on two NICs, Ethernet link type 1. <a href="https://github.com/khademullah/Pcap2HDL">Pcap2HDL</a> is the pcap-to-AXIS fixture. L2AxisBr is the device on two of those slave ports. A beat is accepted only when <code>tvalid &amp;&amp; tready</code>.</p>
     </section>

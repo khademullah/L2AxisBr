@@ -123,7 +123,13 @@ h1 {
 
 section { padding: 0 8vw 2.6rem; }
 
-section p + p, section p + pre, section pre + p { margin-top: 0.9rem; }
+section p + p, section p + pre, section pre + p, section p + ol { margin-top: 0.9rem; }
+
+#later ol { margin: 0.9rem 0 0; padding-left: 1.3rem; }
+
+#later li { margin: 0.55rem 0; }
+
+#later li strong { font-weight: 650; }
 
 pre {
   background: var(--ink);

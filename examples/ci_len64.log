@@ -1,0 +1,22 @@
+[SV] Opening len64.pcap
+[C-DPI] Successfully opened len64.pcap
+[SV] Datalink DLT=1 (Ethernet)
+[SV] Streaming up to 8 packets into port A LEN=1
+[SV] Packet #1 port A  64 B (wire 64) ts=1.000000
+[BR] A FLOOD  64 B  da=020000000002 sa=020000000001
+[SV] Packet #2 port A  63 B (wire 63) ts=2.000000
+[BR] A DROP  63 B  da=020000000002 sa=020000000003
+[SV] Packet #3 port A  1519 B (wire 1519) ts=3.000000
+[BR] A DROP  1519 B  da=020000000002 sa=020000000001
+[SV] Packet #4 port A  80 B (wire 80) ts=4.000000
+[BR] A FILTER  80 B  da=020000000001 sa=020000000002
+
+[SV] Reached end of PCAP before hitting the packet cap.
+
+[SV] Simulation finished. File=len64.pcap  Streamed 4 packets.
+[BR] overlap=61
+[BR] rx_a=4  rx_b=0  tx_a=0  tx_b=1  flood=1  fwd=0  filter=1  drop=2  byte_mis=0  mis=0
+- hdl/tb_l2br.sv:703: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 18us; walltime 0.017 s; speed 1.447 ms/s
+- Verilator: cpu 0.012 s on 1 threads; alloced 25 MB

@@ -7,7 +7,7 @@ The difference is the scoreboard. `pkt_l2br` and `dpi/l2_model.c` run the same 1
 | | L2AxisBr | KSZ8863 | ToR switch | ConnectX / BlueField eSwitch | Open MAC |
 |---|---|---|---|---|---|
 | What you get | Verilog you can simulate | A chip with two PHYs | A rack switch | A NIC that offloads a Linux bridge | AXI-Stream MAC only |
-| Table | 1K, move, no aging | 1K, move, ~200 s aging | Hundreds of thousands | Kernel learns, hardware installs the entry | None |
+| Table | 1K, move, clock aging | 1K, move, ~200 s aging | Hundreds of thousands | Kernel learns, hardware installs the entry | None |
 | Where it sits | Verilator, two AXI-Stream ports | Two 10/100 jacks | Datacenter row | GPU server NIC, RoCE, GPUDirect | Beside a bridge, not instead of one |
 | Check | pcap in, C and HDL agree | Datasheet and a lab | Vendor tests | Driver and kernel bridge | MAC loopback |
 

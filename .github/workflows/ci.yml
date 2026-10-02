@@ -10,28 +10,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Install build tools and libpcap
+      - name: Install Verilator and libpcap
         run: |
           sudo apt-get update
-          sudo apt-get install -y git help2man perl python3 make autoconf g++ flex bison ccache libfl2 libfl-dev zlib1g zlib1g-dev libpcap-dev
-      - name: Cache Verilator 5.032
-        id: vlt
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/.ci-verilator
-          key: verilator-5.032-1
-      - name: Build Verilator 5.032
-        if: steps.vlt.outputs.cache-hit != 'true'
-        run: |
-          git clone --depth 1 --branch v5.032 https://github.com/verilator/verilator /tmp/verilator-src
-          cd /tmp/verilator-src
-          autoconf
-          ./configure --prefix "${{ github.workspace }}/.ci-verilator"
-          make -j"$(nproc)"
-          make install
+          sudo apt-get install -y verilator libpcap-dev
       - name: Learning bridge gates
         run: |
-          unset VERILATOR_ROOT
-          export PATH="${{ github.workspace }}/.ci-verilator/bin:${PATH}"
           verilator --version
           make ci

@@ -21,6 +21,12 @@ PCAP ?= ns1_iperf.pcap
 BP ?= 0
 PAUSE ?= 0
 SPLIT ?= 0
+AGE ?= 0
+TS_GAP ?= 0
+PORT_TS ?= 0
+BOTH ?= 0
+LEN ?= 0
+MCAST ?= 0
 FILTER ?=
 AXIS_W ?= 8
 
@@ -51,6 +57,8 @@ run: compile
 	@set -o pipefail; ./obj_dir/V$(TOP_MODULE) \
 		+MAX_PACKETS=$(MAX_PACKETS) +PCAP="$(PCAP)" \
 		+BP=$(BP) +PAUSE=$(PAUSE) +SPLIT=$(SPLIT) \
+		+AGE=$(AGE) +TS_GAP=$(TS_GAP) +PORT_TS=$(PORT_TS) +BOTH=$(BOTH) \
+		+LEN=$(LEN) +MCAST=$(MCAST) \
 		$(if $(FILTER),+FILTER="$(FILTER)",) | tee $(LOG_FILE)
 
 .PHONY: ci
@@ -80,6 +88,60 @@ ci:
 	grep -q "Streamed 18 packets" $(LOG_FILE)
 	grep -q "rx_a=18  rx_b=0  tx_a=0  tx_b=17  flood=17  fwd=0  filter=1  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
 	cp $(LOG_FILE) examples/ci_table.log
+	python3 scripts/gen_pcap.py --age age.pcap
+	$(MAKE) run PCAP=age.pcap MAX_PACKETS=8 AGE=1000 TS_GAP=1
+	grep -q "Streamed 3 packets" $(LOG_FILE)
+	grep -q "rx_a=3  rx_b=0  tx_a=0  tx_b=2  flood=2  fwd=0  filter=1  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
+	cp $(LOG_FILE) examples/ci_age.log
+	python3 scripts/gen_pcap.py --move move.pcap
+	$(MAKE) run PCAP=move.pcap MAX_PACKETS=8 PORT_TS=1
+	grep -q "Streamed 3 packets" $(LOG_FILE)
+	grep -q "rx_a=2  rx_b=1  tx_a=1  tx_b=2  flood=2  fwd=1  filter=0  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
+	cp $(LOG_FILE) examples/ci_move.log
+	python3 scripts/gen_pcap.py --both both.pcap
+	$(MAKE) run PCAP=both.pcap MAX_PACKETS=8 BOTH=1
+	grep -q "Streamed 2 packets" $(LOG_FILE)
+	grep -q "rx_a=1  rx_b=1  tx_a=1  tx_b=1  flood=1  fwd=1  filter=0  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
+	cp $(LOG_FILE) examples/ci_both.log
+	python3 scripts/gen_pcap.py --queue queue.pcap
+	$(MAKE) run PCAP=queue.pcap MAX_PACKETS=8
+	grep -q "Streamed 2 packets" $(LOG_FILE)
+	grep -q "rx_a=2  rx_b=0  tx_a=0  tx_b=2  flood=2  fwd=0  filter=0  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
+	grep -E -q "overlap=[1-9]" $(LOG_FILE)
+	cp $(LOG_FILE) examples/ci_queue.log
+	python3 scripts/gen_pcap.py --len64 len64.pcap
+	$(MAKE) run PCAP=len64.pcap MAX_PACKETS=8 LEN=1
+	grep -q "Streamed 4 packets" $(LOG_FILE)
+	grep -q "rx_a=4  rx_b=0  tx_a=0  tx_b=1  flood=1  fwd=0  filter=1  drop=2  byte_mis=0  mis=0" $(LOG_FILE)
+	cp $(LOG_FILE) examples/ci_len64.log
+	python3 scripts/gen_pcap.py --jumbo jumbo.pcap
+	$(MAKE) run PCAP=jumbo.pcap MAX_PACKETS=8 LEN=2
+	grep -q "Streamed 3 packets" $(LOG_FILE)
+	grep -q "rx_a=3  rx_b=0  tx_a=0  tx_b=1  flood=1  fwd=0  filter=1  drop=1  byte_mis=0  mis=0" $(LOG_FILE)
+	cp $(LOG_FILE) examples/ci_jumbo.log
+	python3 scripts/gen_pcap.py --vlan vlan.pcap
+	$(MAKE) run PCAP=vlan.pcap MAX_PACKETS=8
+	grep -q "Streamed 3 packets" $(LOG_FILE)
+	grep -q "rx_a=3  rx_b=0  tx_a=0  tx_b=2  flood=2  fwd=0  filter=1  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
+	cp $(LOG_FILE) examples/ci_vlan.log
+	python3 scripts/gen_pcap.py --mcast mcast.pcap
+	$(MAKE) run PCAP=mcast.pcap MAX_PACKETS=8 PORT_TS=1 MCAST=1
+	grep -q "Streamed 3 packets" $(LOG_FILE)
+	grep -q "rx_a=2  rx_b=1  tx_a=0  tx_b=2  flood=1  fwd=1  filter=1  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
+	cp $(LOG_FILE) examples/ci_mcast.log
+	$(MAKE) run PCAP=ci.pcap MAX_PACKETS=8 SPLIT=1 AXIS_W=32
+	grep -q "rx_a=4  rx_b=3  tx_a=3  tx_b=4  flood=2  fwd=5  filter=0  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
+	$(MAKE) run PCAP=ci.pcap MAX_PACKETS=8 SPLIT=1 AXIS_W=128
+	grep -q "rx_a=4  rx_b=3  tx_a=3  tx_b=4  flood=2  fwd=5  filter=0  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
+	$(MAKE) run PCAP=ci.pcap MAX_PACKETS=8 SPLIT=1 AXIS_W=256
+	grep -q "rx_a=4  rx_b=3  tx_a=3  tx_b=4  flood=2  fwd=5  filter=0  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
+	$(MAKE) run PCAP=ns1_iperf.pcap MAX_PACKETS=1000 BP=2
+	grep -q "Streamed 1000 packets" $(LOG_FILE)
+	grep -q "rx_a=1000  rx_b=0  tx_a=0  tx_b=1  flood=1  fwd=0  filter=999  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
+	cp $(LOG_FILE) examples/ci_iperf_1000.log
+	$(MAKE) run PCAP=ns1_iperf.pcap MAX_PACKETS=1000 BP=2 SPLIT=1
+	grep -q "rx_a=731  rx_b=269  tx_a=269  tx_b=731  flood=1  fwd=999  filter=0  drop=0  byte_mis=0  mis=0" $(LOG_FILE)
+	cp $(LOG_FILE) examples/ci_iperf_1000_split.log
 
 .PHONY: demo
 demo:

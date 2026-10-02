@@ -1,0 +1,20 @@
+[SV] Opening jumbo.pcap
+[C-DPI] Successfully opened jumbo.pcap
+[SV] Datalink DLT=1 (Ethernet)
+[SV] Streaming up to 8 packets into port A LEN=2
+[SV] Packet #1 port A  3000 B (wire 3000) ts=1.000000
+[BR] A FLOOD  3000 B  da=020000000002 sa=020000000001
+[SV] Packet #2 port A  9001 B (wire 9001) ts=2.000000
+[BR] A DROP  9001 B  da=020000000002 sa=020000000003
+[SV] Packet #3 port A  64 B (wire 64) ts=3.000000
+[BR] A FILTER  64 B  da=020000000001 sa=020000000002
+
+[SV] Reached end of PCAP before hitting the packet cap.
+
+[SV] Simulation finished. File=jumbo.pcap  Streamed 3 packets.
+[BR] overlap=2997
+[BR] rx_a=3  rx_b=0  tx_a=0  tx_b=1  flood=1  fwd=0  filter=1  drop=1  byte_mis=0  mis=0
+- hdl/tb_l2br.sv:703: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 121us; walltime 0.094 s; speed 1.505 ms/s
+- Verilator: cpu 0.080 s on 1 threads; alloced 25 MB

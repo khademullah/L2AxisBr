@@ -2,7 +2,6 @@
 
 <p align="center">
   <img src="docs/logo.jpg" alt="L2AxisBr, dark" width="180">
-  <img src="docs/logo-2.jpg" alt="L2AxisBr, light" width="180">
 </p>
 
 Two-port MAC-learning Ethernet bridge on AXI-Stream. A recorded pcap is replayed through DPI-C onto one or both ports; `pkt_l2br` learns, floods, forwards, or filters; a C model of the same table scores every decision.
@@ -17,11 +16,11 @@ The worked capture is [`ns1_iperf.pcap`](ns1_iperf.pcap): iperf3 between two vet
 
 ## Quick start
 
-Linux, Verilator 5.032 or later, and libpcap:
+Linux, Verilator 5.020 or later, and libpcap:
 
 ```bash
 sudo apt update
-sudo apt install build-essential libpcap-dev
+sudo apt install build-essential verilator libpcap-dev
 make demo
 ```
 
@@ -63,7 +62,7 @@ make PAUSE=1 PCAP=ns1_iperf.pcap MAX_PACKETS=64
 | `flood` | Destination unknown, broadcast, or I/G multicast; sent out the other port |
 | `fwd` | Destination known on the other port |
 | `filter` | Destination already known on the ingress port; nothing is sent |
-| `drop` | Shorter than 12 bytes, or longer than `MAX_B` (2048); no learn, no egress |
+| `drop` | Shorter than the mode minimum or longer than its maximum. The default is under 12 or over 2048. No learn, no egress |
 
 On a two-port bridge, flood and forward use the same egress wires. The codes stay distinct so the summary can count them. Observers sit on the port pins, not on the buffer inside the bridge.
 
@@ -77,7 +76,7 @@ For a frame of 12 to 2048 bytes:
 4. A unicast hit on the other port is forwarded.
 5. A miss floods the other port.
 
-Learning uses the outer addresses in the first 12 bytes, so a VLAN tag stays in the payload and does not move the MAC fields. The table takes the first free slot. When it is full, one entry is replaced and the victim index advances. STP, LAG, and QinQ are out of scope.
+Learning uses the outer addresses in the first 12 bytes, so a VLAN tag stays in the payload and does not move the MAC fields. The table takes the first free slot. When it is full, one entry is replaced and the victim index advances. `AGE=0` keeps an entry until that replacement. `AGE=N` expires it N clocks after the last learn or refresh, and the next unicast to that MAC floods. A same-port frame refreshes the stamp. STP, LAG, and QinQ are out of scope.
 
 `s_tready` is low while that port’s buffer is committed to the other master, while `ready_mask` is low, or while `pause_en` inserts a bubble.
 
@@ -124,6 +123,7 @@ File format and BPF stay in C. The MAC table and the datapath are clocked System
 | `docs/logo.jpg` | Logo, dark |
 | `docs/logo-2.jpg` | Logo, light |
 | `docs/already-on-the-wire.md` | Comparison with chips that already forward |
+| `docs/milestones.md` | Ten items left for later |
 | `docs/index.html` | Project page GitHub Pages serves from `docs/` |
 
 ## Regression
@@ -135,11 +135,32 @@ File format and BPF stay in C. The MAC table and the datapath are clocked System
 [BR] rx_a=4  rx_b=3  tx_a=3  tx_b=4  flood=2  fwd=5  filter=0  drop=0  byte_mis=0  mis=0
 [BR] rx_a=3  rx_b=0  tx_a=0  tx_b=1  flood=1  fwd=0  filter=1  drop=1  byte_mis=0  mis=0
 [BR] rx_a=18  rx_b=0  tx_a=0  tx_b=17  flood=17  fwd=0  filter=1  drop=0  byte_mis=0  mis=0
+[BR] rx_a=3  rx_b=0  tx_a=0  tx_b=2  flood=2  fwd=0  filter=1  drop=0  byte_mis=0  mis=0
+[BR] rx_a=2  rx_b=1  tx_a=1  tx_b=2  flood=2  fwd=1  filter=0  drop=0  byte_mis=0  mis=0
 ```
 
-A change to learn, flood, or filter belongs in both `hdl/pkt_l2br.sv` and `dpi/l2_model.c`. `CAM_N` is 1024 and `MAX_B` is 2048 on both sides.
+`AGE=1000` with `TS_GAP=1` is the aging line. The pcap learns a MAC, filters the next frame while the entry is still young, then idles 2000 clocks. The same destination floods once the entry has expired. `AGE=0` on that file filters the third frame instead.
+
+`PORT_TS=1` is the move line. The pcap seconds field is the ingress port. Host `02:00:00:00:00:01` is learned on A, seen next on B, and the third frame is forwarded to B.
+
+A change to learn, flood, or filter belongs in both `hdl/pkt_l2br.sv` and `dpi/l2_model.c`. `CAM_N` is 1024. The default legal length is 12 to 2048 bytes. The buffer holds 9000, which `LEN=2` uses.
 
 How this simulation compares with a KSZ8863, a top-of-rack switch, a ConnectX eSwitch, and an open MAC is in [docs/already-on-the-wire.md](docs/already-on-the-wire.md).
+
+## Later
+
+Each one is added in both `hdl/pkt_l2br.sv` and `dpi/l2_model.c`. `make ci` still ends at `mis=0` and `byte_mis=0`. STP, LAG, and QinQ stay out. The same list is in [docs/milestones.md](docs/milestones.md).
+
+1. **Aging.** Supported. `AGE=N` expires an entry N clocks after it was learned or refreshed. `AGE=0` is the default. The next unicast to an expired MAC floods.
+2. **Station move in the regression.** Supported. A source learned on A and then seen on B is updated. Traffic to that MAC leaves on B. `PORT_TS=1` picks the port, and `make ci` checks the forward.
+3. **Both ports in one cycle.** Supported. `BOTH=1` offers a beat on A and B together. The twins still apply A, then B.
+4. **More than one frame in the ingress buffer.** Supported. The next frame is accepted while the previous one is still leaving. `make ci` checks that those cycles overlap.
+5. **Ethernet lengths.** Supported. `LEN=0` is 12 to 2048. `LEN=1` is 64 to 1518. `LEN=2` is 64 to 9000.
+6. **One VLAN.** Supported. A source is learned with its 802.1Q VID. Untagged frames stay on VID 0. Flood and filter stay inside that VID.
+7. **Slot compare.** Supported. After the pcap, every valid bit, MAC, VID, and port is checked against the C table. A mismatch adds to `mis`.
+8. **The whole capture.** Supported. `make ci` replays all 1000 frames of `ns1_iperf.pcap`, once into port A and once with `SPLIT=1`.
+9. **Other widths.** Supported. The same split pcap passes at `AXIS_W` 32, 128, and 256, along with 8 and 64.
+10. **A static multicast table.** Supported. `MCAST=1` installs `01:00:5e:00:00:01` on port B. That group is forwarded from A and filtered on B. An unknown group still floods.
 
 ## License
 

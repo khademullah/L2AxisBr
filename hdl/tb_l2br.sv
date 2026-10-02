@@ -27,11 +27,20 @@ module tb_l2br #(
     import "DPI-C" function int get_bpf_match();
     import "DPI-C" function int get_bpf_skip();
     import "DPI-C" function void l2_reset();
+    import "DPI-C" function void l2_set_age(input int n);
+    import "DPI-C" function void l2_set_len(input int mode);
+    import "DPI-C" function void l2_set_mcast(input int en);
+    import "DPI-C" function void l2_tick();
+    import "DPI-C" function int l2_slot_valid(input int i);
+    import "DPI-C" function longint l2_slot_mac(input int i);
+    import "DPI-C" function int l2_slot_port(input int i);
+    import "DPI-C" function int l2_slot_vid(input int i);
     import "DPI-C" function int l2_predict(
         input int     port,
         input longint da,
         input longint sa,
-        input int     nbytes
+        input int     nbytes,
+        input int     vid
     );
 
     logic clk;
@@ -104,11 +113,25 @@ module tb_l2br #(
     logic [47:0]         be_obs_sa;
     logic [31:0]         be_obs_sum;
 
-    logic [7:0] frm [0:2047];
+    logic [7:0] frm [0:9199];
+    logic [7:0] frm_b [0:9199];
 
     int bp_arg;
     int pause_arg;
     int split_arg;
+    int age_arg;
+    int ts_gap;
+    int port_ts;
+    int both_arg;
+    int len_arg;
+    int mc_arg;
+    int exp_len_a;
+    int exp_len_b;
+    int exp_vid_a;
+    int exp_vid_b;
+    int unsigned exp_sum_a;
+    int unsigned exp_sum_b;
+    bit use_b_buf;
     int max_packets;
     int packet_count;
     int cur_len;
@@ -116,6 +139,7 @@ module tb_l2br #(
     int n_rx_a, n_rx_b, n_tx_a, n_tx_b;
     int n_flood, n_fwd, n_filter, n_drop;
     int n_mis, n_byte_mis;
+    int n_overlap;
     int unsigned qa_len [0:QN-1];
     int unsigned qa_sum [0:QN-1];
     int unsigned qb_len [0:QN-1];
@@ -129,6 +153,9 @@ module tb_l2br #(
     pkt_l2br #(.DATA_W(DATA_W)) u_br (
         .clk(clk),
         .rst_n(rst_n),
+        .age_limit(age_arg),
+        .len_mode(len_arg),
+        .mc_en(mc_arg != 0),
         .a_s_tdata(a_tdata),
         .a_s_tkeep(a_tkeep),
         .a_s_tvalid(a_tvalid),
@@ -248,6 +275,23 @@ module tb_l2br #(
         end
     endtask
 
+    function automatic int file_vid(input bit use_b, input int n);
+        logic [15:0] et;
+        logic [15:0] tci;
+        if (n < 16)
+            return 0;
+        if (use_b) begin
+            et  = {frm_b[12], frm_b[13]};
+            tci = {frm_b[14], frm_b[15]};
+        end else begin
+            et  = {frm[12], frm[13]};
+            tci = {frm[14], frm[15]};
+        end
+        if (et == 16'h8100)
+            return int'(tci[11:0]);
+        return 0;
+    endfunction
+
     task automatic score_ing(
         input int          port,
         input logic        dec_ok,
@@ -259,12 +303,16 @@ module tb_l2br #(
         input logic [31:0] osum
     );
         int c_act;
-        if (cur_port != port || obytes != 32'(cur_len) || osum != get_fingerprint()) begin
+        if (obytes != 32'((port != 0) ? exp_len_b : exp_len_a) ||
+            osum != ((port != 0) ? exp_sum_b : exp_sum_a)) begin
             n_mis = n_mis + 1;
             $display("[BR] %s MIS  obs %0d B fp=%08h  file %0d B fp=%08h",
-                     (port != 0) ? "B" : "A", obytes, osum, cur_len, get_fingerprint());
+                     (port != 0) ? "B" : "A", obytes, osum,
+                     (port != 0) ? exp_len_b : exp_len_a,
+                     (port != 0) ? exp_sum_b : exp_sum_a);
         end
-        c_act = l2_predict(port, longint'(oda), longint'(osa), int'(obytes));
+        c_act = l2_predict(port, longint'(oda), longint'(osa), int'(obytes),
+                           (port != 0) ? exp_vid_b : exp_vid_a);
         if (!dec_ok || (dec_act != c_act[1:0]) || (dec_bytes != obytes)) begin
             n_mis = n_mis + 1;
             $display("[BR] %s MIS  dut %s %0d B  c %s",
@@ -341,6 +389,12 @@ module tb_l2br #(
                 qb_n = qb_n - 1;
             end
         end
+        if (rst_n && a_tvalid && a_tready && b_m_tvalid)
+            n_overlap = n_overlap + 1;
+        if (rst_n && b_tvalid && b_tready && a_m_tvalid)
+            n_overlap = n_overlap + 1;
+        if (rst_n)
+            l2_tick();
     end
 
     task automatic drive_frame(input int port, input int len);
@@ -366,7 +420,7 @@ module tb_l2br #(
                 b_tkeep  = '0;
                 for (k = 0; k < KEEP_W; k = k + 1) begin
                     if ((i + k) < len) begin
-                        b_tdata[8*k +: 8] = frm[i + k];
+                        b_tdata[8*k +: 8] = use_b_buf ? frm_b[i + k] : frm[i + k];
                         b_tkeep[k]        = 1'b1;
                     end
                 end
@@ -407,6 +461,7 @@ module tb_l2br #(
 
     initial begin
         int pkt_len;
+        int pkt_len_b;
         int pkt_wire;
         int dlt;
         int port;
@@ -434,13 +489,26 @@ module tb_l2br #(
         bp_arg       = 0;
         pause_arg    = 0;
         split_arg    = 0;
+        age_arg      = 0;
+        ts_gap       = 0;
+        port_ts      = 0;
+        both_arg     = 0;
+        len_arg      = 0;
+        mc_arg       = 0;
+        use_b_buf    = 1'b0;
+        exp_len_a    = 0;
+        exp_len_b    = 0;
+        exp_sum_a    = '0;
+        exp_sum_b    = '0;
+        exp_vid_a    = 0;
+        exp_vid_b    = 0;
         max_packets  = 100;
         packet_count = 0;
         cur_len      = 0;
         cur_port     = 0;
         n_rx_a = 0; n_rx_b = 0; n_tx_a = 0; n_tx_b = 0;
         n_flood = 0; n_fwd = 0; n_filter = 0; n_drop = 0;
-        n_mis = 0; n_byte_mis = 0;
+        n_mis = 0; n_byte_mis = 0; n_overlap = 0;
         qa_h = 0; qa_t = 0; qa_n = 0;
         qb_h = 0; qb_t = 0; qb_n = 0;
         pcap_name = "ns1_iperf.pcap";
@@ -449,14 +517,23 @@ module tb_l2br #(
         void'($value$plusargs("BP=%d", bp_arg));
         void'($value$plusargs("PAUSE=%d", pause_arg));
         void'($value$plusargs("SPLIT=%d", split_arg));
+        void'($value$plusargs("AGE=%d", age_arg));
+        void'($value$plusargs("TS_GAP=%d", ts_gap));
+        void'($value$plusargs("PORT_TS=%d", port_ts));
+        void'($value$plusargs("BOTH=%d", both_arg));
+        void'($value$plusargs("LEN=%d", len_arg));
+        void'($value$plusargs("MCAST=%d", mc_arg));
         if ($value$plusargs("PCAP=%s", pcap_arg) && pcap_arg.len() != 0)
             pcap_name = pcap_arg;
         void'($value$plusargs("FILTER=%s", filter_arg));
 
         #20;
         rst_n = 1'b1;
-        #10;
+        l2_set_age(age_arg);
+        l2_set_len(len_arg);
+        l2_set_mcast(mc_arg);
         l2_reset();
+        #10;
 
         $display("[SV] Opening %s", pcap_name);
         if (pcap_name.len() == 0 || open_pcap(pcap_name) != 0) begin
@@ -491,6 +568,16 @@ module tb_l2br #(
                 banner = {banner, " (BP=2, random tready)"};
             if (pause_arg != 0)
                 banner = {banner, " PAUSE=1"};
+            if (age_arg > 0)
+                banner = {banner, $sformatf(" AGE=%0d", age_arg)};
+            if (port_ts != 0)
+                banner = {banner, " PORT_TS=1"};
+            if (both_arg != 0)
+                banner = {banner, " BOTH=1"};
+            if (len_arg != 0)
+                banner = {banner, $sformatf(" LEN=%0d", len_arg)};
+            if (mc_arg != 0)
+                banner = {banner, " MCAST=1"};
             if (filter_arg.len() != 0)
                 banner = {banner, " FILTER=", filter_arg};
             $display("%s", banner);
@@ -502,7 +589,7 @@ module tb_l2br #(
                 $display("\n[SV] Reached end of PCAP before hitting the packet cap.");
                 break;
             end
-            if (pkt_len > 2048) begin
+            if (pkt_len > 9200) begin
                 $display("[SV] Frame %0d B exceeds the bench buffer.", pkt_len);
                 close_pcap();
                 $fatal(1);
@@ -517,12 +604,55 @@ module tb_l2br #(
                 src_m = {frm[6], frm[7], frm[8], frm[9], frm[10], frm[11]};
             else
                 src_m = '0;
-            port = (split_arg != 0 && src_m != HOST_A) ? 1 : 0;
+            if (both_arg != 0)
+                port = 0;
+            else if (port_ts != 0)
+                port = (ts_sec != 0) ? 1 : 0;
+            else
+                port = (split_arg != 0 && src_m != HOST_A) ? 1 : 0;
             cur_len  = pkt_len;
             cur_port = port;
+            if (port == 0) begin
+                exp_len_a = pkt_len;
+                exp_sum_a = get_fingerprint();
+                exp_vid_a = file_vid(1'b0, pkt_len);
+            end else begin
+                exp_len_b = pkt_len;
+                exp_sum_b = get_fingerprint();
+                exp_vid_b = file_vid(use_b_buf, pkt_len);
+            end
             $display("[SV] Packet #%0d port %s  %0d B (wire %0d) ts=%0d.%06d",
                      packet_count, (port != 0) ? "B" : "A", pkt_len, pkt_wire, ts_sec, ts_usec);
-            drive_frame(port, pkt_len);
+            if ((ts_gap != 0) && (ts_usec > 0))
+                repeat (ts_usec) @(posedge clk);
+            if (both_arg != 0) begin
+                pkt_len_b = fetch_next_packet();
+                if (pkt_len_b == 0) begin
+                    drive_frame(0, pkt_len);
+                end else begin
+                    if (pkt_len_b > 9200) begin
+                        $display("[SV] Frame %0d B exceeds the bench buffer.", pkt_len_b);
+                        close_pcap();
+                        $fatal(1);
+                    end
+                    packet_count = packet_count + 1;
+                    exp_len_b = pkt_len_b;
+                    exp_sum_b = get_fingerprint();
+                    for (int bi = 0; bi < pkt_len_b; bi = bi + 1)
+                        frm_b[bi] = 8'(get_packet_byte());
+                    exp_vid_b = file_vid(1'b1, pkt_len_b);
+                    $display("[SV] Packet #%0d port B  %0d B (wire %0d) ts=%0d.%06d",
+                             packet_count, pkt_len_b, get_wire_len(), get_ts_sec(), get_ts_usec());
+                    use_b_buf = 1'b1;
+                    fork
+                        drive_frame(0, pkt_len);
+                        drive_frame(1, pkt_len_b);
+                    join
+                    use_b_buf = 1'b0;
+                end
+            end else begin
+                drive_frame(port, pkt_len);
+            end
             repeat (4) @(posedge clk);
         end
 
@@ -541,11 +671,30 @@ module tb_l2br #(
             n_byte_mis = n_byte_mis + qa_n + qb_n;
         end
 
+        begin
+            int n_slot;
+            n_slot = 0;
+            for (int si = 0; si < 1024; si = si + 1) begin
+                if (int'(u_br.cam_v[si]) != l2_slot_valid(si))
+                    n_slot = n_slot + 1;
+                else if (u_br.cam_v[si] &&
+                         (u_br.cam_mac[si] != 48'(l2_slot_mac(si)) ||
+                          int'(u_br.cam_prt[si]) != l2_slot_port(si) ||
+                          int'(u_br.cam_vid[si]) != l2_slot_vid(si)))
+                    n_slot = n_slot + 1;
+            end
+            if (n_slot != 0) begin
+                $display("[BR] SLOT_MIS %0d", n_slot);
+                n_mis = n_mis + n_slot;
+            end
+        end
+
         close_pcap();
         if (filter_arg.len() != 0)
             $display("[C-DPI] BPF matched=%0d skipped=%0d", get_bpf_match(), get_bpf_skip());
         $display("\n[SV] Simulation finished. File=%s  Streamed %0d packets.",
                  pcap_name, packet_count);
+        $display("[BR] overlap=%0d", n_overlap);
         $display("[BR] rx_a=%0d  rx_b=%0d  tx_a=%0d  tx_b=%0d  flood=%0d  fwd=%0d  filter=%0d  drop=%0d  byte_mis=%0d  mis=%0d",
                  n_rx_a, n_rx_b, n_tx_a, n_tx_b, n_flood, n_fwd, n_filter, n_drop,
                  n_byte_mis, n_mis);

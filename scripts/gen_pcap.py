@@ -10,6 +10,14 @@ Stdlib only. Output is local (gitignored *.pcap).
     python3 scripts/gen_pcap.py ci.pcap
     python3 scripts/gen_pcap.py --drop drop.pcap
     python3 scripts/gen_pcap.py --table table.pcap
+    python3 scripts/gen_pcap.py --age age.pcap
+    python3 scripts/gen_pcap.py --move move.pcap
+    python3 scripts/gen_pcap.py --both both.pcap
+    python3 scripts/gen_pcap.py --queue queue.pcap
+    python3 scripts/gen_pcap.py --len64 len64.pcap
+    python3 scripts/gen_pcap.py --jumbo jumbo.pcap
+    python3 scripts/gen_pcap.py --vlan vlan.pcap
+    python3 scripts/gen_pcap.py --mcast mcast.pcap
 
 With every frame replayed into port A the bridge learns both MACs on A:
 unknown unicast and the later ARP broadcast leave on port B (tx_b=2);
@@ -45,8 +53,8 @@ def pcap_hdr() -> bytes:
     return struct.pack("<IHHIIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
 
 
-def rec(raw: bytes, ts: int) -> bytes:
-    return struct.pack("<IIII", ts, 0, len(raw), len(raw)) + raw
+def rec(raw: bytes, ts: int, usec: int = 0) -> bytes:
+    return struct.pack("<IIII", ts, usec, len(raw), len(raw)) + raw
 
 
 def eth(dst: bytes, src: bytes, etype: int, payload: bytes) -> bytes:
@@ -132,6 +140,127 @@ def table_frames() -> list[bytes]:
     return frames_out
 
 
+def sized(dst: bytes, src: bytes, n: int) -> bytes:
+    if n < 14:
+        raise ValueError(n)
+    return eth(dst, src, 0x0800, b"\x00" * (n - 14))
+
+
+def len64_frames() -> list[bytes]:
+    """64-byte learn, 63-byte drop, 1519-byte drop, then a filter.
+
+    LEN=1 accepts 64 through 1518. The drops must not disturb the learned MAC.
+    """
+    return [
+        sized(H2, H1, 64),
+        sized(H2, bytes.fromhex("020000000003"), 63),
+        sized(H2, H1, 1519),
+        sized(H1, H2, 80),
+    ]
+
+
+def jumbo_frames() -> list[bytes]:
+    """A 3000-byte learn, a 9001-byte drop, then a filter.
+
+    LEN=2 accepts 64 through 9000. The default 2048 limit would drop the first.
+    """
+    return [
+        sized(H2, H1, 3000),
+        sized(H2, bytes.fromhex("020000000003"), 9001),
+        sized(H1, H2, 64),
+    ]
+
+
+def vlan(dst: bytes, src: bytes, vid: int, payload: bytes) -> bytes:
+    return dst + src + struct.pack("!HHH", 0x8100, vid & 0xFFF, 0x0800) + payload
+
+
+def mcast_frames() -> tuple[list[bytes], list[int]]:
+    """Known group 01:00:5e:00:00:01, an unknown group, then the known group on B.
+
+    Seconds are the port under PORT_TS=1. With MCAST=1 the known group is
+    installed on port B: it is forwarded from A and filtered on B.
+    """
+    g1 = bytes.fromhex("01005e000001")
+    g2 = bytes.fromhex("01005e000002")
+    pad = b"\x00" * 20
+    raw = [
+        eth(g1, H1, 0x0800, pad),
+        eth(g2, H1, 0x0800, pad),
+        eth(g1, H2, 0x0800, pad),
+    ]
+    return raw, [0, 0, 1]
+
+
+def vlan_frames() -> list[bytes]:
+    """Learn H1 on VID 5, miss that MAC untagged, then filter it on VID 5."""
+    pad = b"\x00" * 20
+    return [
+        vlan(H2, H1, 5, pad),
+        eth(H1, H2, 0x0800, pad),
+        vlan(H1, H2, 5, pad),
+    ]
+
+
+def queue_frames() -> list[bytes]:
+    """Two broadcasts on one port.
+
+    The second frame has to be accepted while the first is still leaving.
+    """
+    bcast = bytes.fromhex("ffffffffffff")
+    pad = b"\x00" * 20
+    return [
+        eth(bcast, H1, 0x0800, pad),
+        eth(bcast, H2, 0x0800, pad),
+    ]
+
+
+def both_frames() -> list[bytes]:
+    """One broadcast on A and, in the same cycles, a lookup of that source on B.
+
+    The bench pairs these two frames when BOTH=1. A is learned before B's
+    destination is looked up, so B is forwarded rather than flooded.
+    """
+    bcast = bytes.fromhex("ffffffffffff")
+    pad = b"\x00" * 20
+    return [
+        eth(bcast, H1, 0x0800, pad),
+        eth(H1, H2, 0x0800, pad),
+    ]
+
+
+def move_frames() -> tuple[list[bytes], list[int]]:
+    """H1 is learned on A, then seen on B, then looked up from A.
+
+    The seconds field is the ingress port when the bench runs with
+    PORT_TS=1: 0 is port A, any other value is port B. Frame 3 must be
+    forwarded to B. A table that ignored the move would filter it.
+    """
+    bcast = bytes.fromhex("ffffffffffff")
+    pad = b"\x00" * 20
+    raw = [
+        eth(bcast, H1, 0x0800, pad),
+        eth(H2, H1, 0x0800, pad),
+        eth(H1, H2, 0x0800, pad),
+    ]
+    return raw, [0, 1, 0]
+
+
+def age_frames() -> tuple[list[bytes], list[int]]:
+    """Learn H1, confirm it still filters, then idle 2000 clocks and flood.
+
+    The usec field is idle clocks before that frame when the bench is run
+    with TS_GAP=1. AGE=1000 expires H1 before the third frame's decision.
+    """
+    pad = b"\x00" * 20
+    raw = [
+        eth(H2, H1, 0x0800, pad),
+        eth(H1, H2, 0x0800, pad),
+        eth(H1, H2, 0x0800, pad),
+    ]
+    return raw, [0, 0, 2000]
+
+
 def drop_frames() -> list[bytes]:
     """Flood, then an 8-byte runt, then a frame that must still filter.
 
@@ -162,18 +291,96 @@ def main() -> int:
         action="store_true",
         help="write 17 learns and a lookup of the first MAC (18 frames)",
     )
+    p.add_argument(
+        "--age",
+        action="store_true",
+        help="write learn, still-valid filter, then a flood after 2000 idle clocks",
+    )
+    p.add_argument(
+        "--move",
+        action="store_true",
+        help="write a source learned on A, seen on B, then looked up from A",
+    )
+    p.add_argument(
+        "--both",
+        action="store_true",
+        help="write two frames for the bench to drive on A and B in the same cycles",
+    )
+    p.add_argument(
+        "--queue",
+        action="store_true",
+        help="write two broadcasts that must overlap ingress and egress",
+    )
+    p.add_argument(
+        "--len64",
+        action="store_true",
+        help="write 64-byte learn, 63-byte drop, 1519-byte drop, filter",
+    )
+    p.add_argument(
+        "--jumbo",
+        action="store_true",
+        help="write a 3000-byte learn, a 9001-byte drop, and a filter",
+    )
+    p.add_argument(
+        "--vlan",
+        action="store_true",
+        help="write a VID 5 learn, an untagged miss, and a VID 5 filter",
+    )
+    p.add_argument(
+        "--mcast",
+        action="store_true",
+        help="write a known multicast group, an unknown group, and the known group on B",
+    )
     args = p.parse_args()
-    if args.drop and args.table:
-        p.error("choose one of --drop or --table")
+    modes = sum(
+        1
+        for flag in (
+            args.drop,
+            args.table,
+            args.age,
+            args.move,
+            args.both,
+            args.queue,
+            args.len64,
+            args.jumbo,
+            args.vlan,
+            args.mcast,
+        )
+        if flag
+    )
+    if modes > 1:
+        p.error("choose only one frame-set flag")
+    usecs = None
+    secs = None
     if args.table:
         chosen = table_frames()
     elif args.drop:
         chosen = drop_frames()
+    elif args.age:
+        chosen, usecs = age_frames()
+    elif args.move:
+        chosen, secs = move_frames()
+    elif args.both:
+        chosen = both_frames()
+    elif args.queue:
+        chosen = queue_frames()
+    elif args.len64:
+        chosen = len64_frames()
+    elif args.jumbo:
+        chosen = jumbo_frames()
+    elif args.vlan:
+        chosen = vlan_frames()
+    elif args.mcast:
+        chosen, secs = mcast_frames()
     else:
         chosen = frames()
     blob = pcap_hdr()
     for i, raw in enumerate(chosen, start=1):
-        blob += rec(raw, i)
+        blob += rec(
+            raw,
+            i if secs is None else secs[i - 1],
+            0 if usecs is None else usecs[i - 1],
+        )
     with open(args.out, "wb") as f:
         f.write(blob)
     print(f"wrote {args.out} ({len(chosen)} frames)", file=sys.stderr)

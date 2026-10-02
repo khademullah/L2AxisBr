@@ -20,8 +20,9 @@
 [SV] Reached end of PCAP before hitting the packet cap.
 
 [SV] Simulation finished. File=ci.pcap  Streamed 7 packets.
+[BR] overlap=92
 [BR] rx_a=7  rx_b=0  tx_a=0  tx_b=2  flood=2  fwd=0  filter=5  drop=0  byte_mis=0  mis=0
-- hdl/tb_l2br.sv:554: Verilog $finish
+- hdl/tb_l2br.sv:703: Verilog $finish
 - S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
-- Verilator: $finish at 10us; walltime 0.014 s; speed 708.241 us/s
-- Verilator: cpu 0.014 s on 1 threads; alloced 25 MB
+- Verilator: $finish at 8us; walltime 0.009 s; speed 1.327 ms/s
+- Verilator: cpu 0.006 s on 1 threads; alloced 25 MB

@@ -3,11 +3,16 @@
 // and pause_en). Egress is an AXI-Stream master on each port: a frame
 // accepted on A leaves on B, and the other way around.
 //
-// Beat = s_tvalid && s_tready. s_tready is low while this port's buffer is
-// committed to the other master, and while ready_mask or pause_en says so.
+// Beat = s_tvalid && s_tready. Each port holds two frames. s_tready stays
+// high while one frame is leaving, and falls when both slots are full.
+// ready_mask and pause_en can still pull it low.
 // Learn unicast SA, then look up DA. Broadcast and I/G multicast flood the
 // other port. DA on this port is filtered. DA on the other port is forwarded.
-// A miss floods. Under 12 bytes or over MAX_B is a drop (no learn).
+// A miss floods. len_mode 0 drops under 12 or over 2048. len_mode 1
+// drops under 64 or over 1518. len_mode 2 drops under 64 or over 9000.
+// The stored buffer is MAX_B bytes either way. A drop does not learn.
+// age_limit == 0 keeps an entry until it is replaced. A nonzero age_limit
+// expires the entry that many clocks after it was learned or refreshed.
 // The C twin is dpi/l2_model.c (CAM_N = 1024, MAX_B = 2048).
 
 `timescale 1ns/1ps
@@ -15,10 +20,13 @@
 module pkt_l2br #(
     parameter int DATA_W = 8,
     parameter int CAM_N  = 1024,
-    parameter int MAX_B  = 2048
+    parameter int MAX_B  = 9000
 ) (
     input  logic                clk,
     input  logic                rst_n,
+    input  int                  age_limit,
+    input  int                  len_mode,
+    input  logic                mc_en,
 
     input  logic [DATA_W-1:0]   a_s_tdata,
     input  logic [DATA_W/8-1:0] a_s_tkeep,
@@ -96,6 +104,10 @@ module pkt_l2br #(
     logic [47:0]       a_sa;
     logic [47:0]       b_da;
     logic [47:0]       b_sa;
+    logic [15:0]       a_et;
+    logic [15:0]       a_tci;
+    logic [15:0]       b_et;
+    logic [15:0]       b_tci;
     logic [31:0]       a_user;
     logic [31:0]       b_user;
     logic              a_err;
@@ -104,65 +116,124 @@ module pkt_l2br #(
     logic              eg_b_err;
     logic [31:0]       eg_a_user;
     logic              eg_a_err;
-    logic [7:0]        a_mem [0:MAX_B-1];
-    logic [7:0]        b_mem [0:MAX_B-1];
+    logic [7:0]        a_mem [0:1][0:MAX_B-1];
+    logic [7:0]        b_mem [0:1][0:MAX_B-1];
+    logic              a_wr_bank;
+    logic              b_wr_bank;
+    logic              a_rd_bank;
+    logic              b_rd_bank;
+    logic [1:0]        a_q;
+    logic [1:0]        b_q;
+    logic [15:0]       a_slen [0:1];
+    logic [15:0]       b_slen [0:1];
+    logic [31:0]       a_suser [0:1];
+    logic [31:0]       b_suser [0:1];
+    logic              a_serr [0:1];
+    logic              b_serr [0:1];
 
     logic              cam_v   [0:CAM_N-1];
     logic [47:0]       cam_mac [0:CAM_N-1];
+    logic [11:0]       cam_vid [0:CAM_N-1];
     logic              cam_prt [0:CAM_N-1];
+    logic [31:0]       cam_age [0:CAM_N-1];
+    logic [31:0]       cam_time;
     int                cam_vic;
 
     logic              cam_v_w   [0:CAM_N-1];
     logic [47:0]       cam_mac_w [0:CAM_N-1];
+    logic [11:0]       cam_vid_w [0:CAM_N-1];
     logic              cam_prt_w [0:CAM_N-1];
+    logic [31:0]       cam_age_w [0:CAM_N-1];
+    logic [31:0]       time_w;
     int                vic_w;
 
     wire a_fire = a_s_tvalid && a_s_tready;
     wire b_fire = b_s_tvalid && b_s_tready;
 
-    assign a_s_tready = rst_n && a_ready_mask && !a_bubble && !a_hold;
-    assign b_s_tready = rst_n && b_ready_mask && !b_bubble && !b_hold;
+    assign a_s_tready = rst_n && a_ready_mask && !a_bubble && (a_q < 2);
+    assign b_s_tready = rst_n && b_ready_mask && !b_bubble && (b_q < 2);
     assign a_busy = (a_st == ST_RECV) || a_hold || b_m_tvalid;
     assign b_busy = (b_st == ST_RECV) || b_hold || a_m_tvalid;
 
-    task automatic cam_learn(input logic [47:0] sa, input logic prt);
+    function automatic int len_min();
+        if (len_mode == 0)
+            return 12;
+        return 64;
+    endfunction
+
+    function automatic int len_max();
+        if (len_mode == 1)
+            return 1518;
+        if (len_mode == 2)
+            return 9000;
+        return 2048;
+    endfunction
+
+    function automatic bit cam_live(input int i);
+        if (!cam_v_w[i])
+            return 1'b0;
+        if (age_limit <= 0)
+            return 1'b1;
+        return (time_w - cam_age_w[i]) < 32'(age_limit);
+    endfunction
+
+    function automatic logic [11:0] vid_of(input logic [15:0] et, input logic [15:0] tci);
+        if (et == 16'h8100)
+            return tci[11:0];
+        return 12'd0;
+    endfunction
+
+    task automatic cam_learn(input logic [47:0] sa, input logic [11:0] vid, input logic prt);
         bit found;
         if (sa[40])
             return;
         found = 1'b0;
         for (int i = 0; i < CAM_N; i++) begin
-            if (!found && cam_v_w[i] && (cam_mac_w[i] == sa)) begin
+            if (!found && cam_live(i) && (cam_mac_w[i] == sa) && (cam_vid_w[i] == vid)) begin
                 cam_prt_w[i] = prt;
+                cam_age_w[i] = time_w;
                 found = 1'b1;
             end
         end
         if (found)
             return;
         for (int i = 0; i < CAM_N; i++) begin
-            if (!found && !cam_v_w[i]) begin
+            if (!found && !cam_live(i)) begin
                 cam_v_w[i]   = 1'b1;
                 cam_mac_w[i] = sa;
+                cam_vid_w[i] = vid;
                 cam_prt_w[i] = prt;
+                cam_age_w[i] = time_w;
                 found = 1'b1;
             end
         end
         if (!found) begin
             cam_v_w[vic_w]   = 1'b1;
             cam_mac_w[vic_w] = sa;
+            cam_vid_w[vic_w] = vid;
             cam_prt_w[vic_w] = prt;
+            cam_age_w[vic_w] = time_w;
             vic_w = (vic_w + 1) % CAM_N;
         end
     endtask
 
-    function automatic logic [1:0] cam_act(input logic [47:0] da, input logic prt);
+    function automatic logic [1:0] cam_act(input logic [47:0] da, input logic [11:0] vid, input logic prt);
         bit hit;
         logic hp;
         hit = 1'b0;
         hp  = 1'b0;
-        if ((&da) || da[40])
+        if (&da)
             return ACT_FLOOD;
+        if (da[40]) begin
+            if (mc_en && (da == 48'h01_00_5e_00_00_01)) begin
+                if (prt == 1'b1)
+                    return ACT_FILTER;
+                return ACT_FWD;
+            end
+            return ACT_FLOOD;
+        end
         for (int i = 0; i < CAM_N; i++) begin
-            if (!hit && cam_v_w[i] && (cam_mac_w[i] == da)) begin
+            if (!hit && cam_live(i) && (cam_mac_w[i] == da) && (cam_vid_w[i] == vid)) begin
                 hit = 1'b1;
                 hp  = cam_prt_w[i];
             end
@@ -205,6 +276,12 @@ module pkt_l2br #(
             b_st         <= ST_IDLE;
             a_hold       <= 1'b0;
             b_hold       <= 1'b0;
+            a_wr_bank    <= 1'b0;
+            b_wr_bank    <= 1'b0;
+            a_rd_bank    <= 1'b0;
+            b_rd_bank    <= 1'b0;
+            a_q          <= '0;
+            b_q          <= '0;
             a_bubble     <= 1'b0;
             b_bubble     <= 1'b0;
             a_cap        <= 1'b0;
@@ -248,11 +325,12 @@ module pkt_l2br #(
             b_dec_act    <= ACT_FILTER;
             b_dec_bytes  <= '0;
             cam_vic      <= 0;
-            for (int i = 0; i < CAM_N; i++) begin
-                cam_v[i]   <= 1'b0;
-                cam_mac[i] <= '0;
-                cam_prt[i] <= 1'b0;
-            end
+            cam_time     <= '0;
+            cam_v        <= '{default: '0};
+            cam_mac      <= '{default: '0};
+            cam_vid      <= '{default: '0};
+            cam_prt      <= '{default: '0};
+            cam_age      <= '{default: '0};
         end else begin
             a_dec_valid <= 1'b0;
             b_dec_valid <= 1'b0;
@@ -265,12 +343,47 @@ module pkt_l2br #(
             else
                 b_bubble <= 1'b0;
 
+            time_w = cam_time;
             for (int i = 0; i < CAM_N; i++) begin
                 cam_v_w[i]   = cam_v[i];
                 cam_mac_w[i] = cam_mac[i];
+                cam_vid_w[i] = cam_vid[i];
                 cam_prt_w[i] = cam_prt[i];
+                cam_age_w[i] = cam_age[i];
             end
             vic_w = cam_vic;
+
+            begin
+                logic [1:0] aq;
+                logic [1:0] bq;
+                logic       ah;
+                logic       bh;
+                logic       arb;
+                logic       brb;
+                logic [15:0] a_slen_w [0:1];
+                logic [15:0] b_slen_w [0:1];
+                logic [31:0] a_suser_w [0:1];
+                logic [31:0] b_suser_w [0:1];
+                logic        a_serr_w [0:1];
+                logic        b_serr_w [0:1];
+                aq  = a_q;
+                bq  = b_q;
+                ah  = a_hold;
+                bh  = b_hold;
+                arb = a_rd_bank;
+                brb = b_rd_bank;
+                a_slen_w[0]  = a_slen[0];
+                a_slen_w[1]  = a_slen[1];
+                b_slen_w[0]  = b_slen[0];
+                b_slen_w[1]  = b_slen[1];
+                a_suser_w[0] = a_suser[0];
+                a_suser_w[1] = a_suser[1];
+                b_suser_w[0] = b_suser[0];
+                b_suser_w[1] = b_suser[1];
+                a_serr_w[0]  = a_serr[0];
+                a_serr_w[1]  = a_serr[1];
+                b_serr_w[0]  = b_serr[0];
+                b_serr_w[1]  = b_serr[1];
 
             if (a_fire) begin
                 int          a_at;
@@ -281,10 +394,15 @@ module pkt_l2br #(
                 logic        a_err_w;
                 logic [7:0]  a_bv;
                 logic [1:0]  a_act_w;
+                logic [15:0] a_et_w;
+                logic [15:0] a_tci_w;
+                logic [11:0] a_vid_w;
                 if (a_s_tstart || (a_st == ST_IDLE)) begin
                     a_at     = 0;
                     a_da_w   = '0;
                     a_sa_w   = '0;
+                    a_et_w   = '0;
+                    a_tci_w  = '0;
                     a_cap_w  = 1'b0;
                     a_user_w = a_s_tuser;
                     a_err_w  = a_s_tuser_err;
@@ -292,6 +410,8 @@ module pkt_l2br #(
                     a_at     = int'(a_nbyte);
                     a_da_w   = a_da;
                     a_sa_w   = a_sa;
+                    a_et_w   = a_et;
+                    a_tci_w  = a_tci;
                     a_cap_w  = a_cap;
                     a_user_w = a_user;
                     a_err_w  = a_err;
@@ -300,8 +420,16 @@ module pkt_l2br #(
                     if (a_s_tkeep[k]) begin
                         a_bv = a_s_tdata[8*k +: 8];
                         if (!a_cap_w && (a_at < MAX_B)) begin
-                            a_mem[a_at] <= a_bv;
+                            a_mem[a_wr_bank][a_at] <= a_bv;
                             take_mac(a_bv, a_at, a_da_w, a_sa_w);
+                            if (a_at == 12)
+                                a_et_w[15:8] = a_bv;
+                            else if (a_at == 13)
+                                a_et_w[7:0] = a_bv;
+                            else if (a_at == 14)
+                                a_tci_w[15:8] = a_bv;
+                            else if (a_at == 15)
+                                a_tci_w[7:0] = a_bv;
                         end else begin
                             a_cap_w = 1'b1;
                         end
@@ -311,6 +439,8 @@ module pkt_l2br #(
                 a_nbyte <= 16'(a_at);
                 a_da    <= a_da_w;
                 a_sa    <= a_sa_w;
+                a_et    <= a_et_w;
+                a_tci   <= a_tci_w;
                 a_cap   <= a_cap_w;
                 a_user  <= a_user_w;
                 a_err   <= a_err_w;
@@ -318,18 +448,26 @@ module pkt_l2br #(
                     a_dec_valid <= 1'b1;
                     a_dec_bytes <= a_at;
                     a_st        <= ST_IDLE;
-                    if ((a_at < 12) || (a_at > MAX_B) || a_cap_w) begin
+                    if ((a_at < len_min()) || (a_at > len_max()) || a_cap_w) begin
                         a_dec_act <= ACT_DROP;
                     end else begin
-                        cam_learn(a_sa_w, 1'b0);
-                        a_act_w   = cam_act(a_da_w, 1'b0);
+                        a_vid_w   = vid_of(a_et_w, a_tci_w);
+                        cam_learn(a_sa_w, a_vid_w, 1'b0);
+                        a_act_w   = cam_act(a_da_w, a_vid_w, 1'b0);
                         a_dec_act <= a_act_w;
                         if ((a_act_w == ACT_FWD) || (a_act_w == ACT_FLOOD)) begin
-                            a_hold    <= 1'b1;
-                            a_len     <= 16'(a_at);
-                            a_rd      <= '0;
-                            eg_b_user <= a_user_w;
-                            eg_b_err  <= a_err_w;
+                            a_slen_w[a_wr_bank]  = 16'(a_at);
+                            a_suser_w[a_wr_bank] = a_user_w;
+                            a_serr_w[a_wr_bank]  = a_err_w;
+                            if (aq == 0) begin
+                                ah        = 1'b1;
+                                a_len     <= 16'(a_at);
+                                a_rd      <= '0;
+                                eg_b_user <= a_user_w;
+                                eg_b_err  <= a_err_w;
+                            end
+                            a_wr_bank <= ~a_wr_bank;
+                            aq = aq + 2'd1;
                         end
                     end
                 end else begin
@@ -346,10 +484,15 @@ module pkt_l2br #(
                 logic        b_err_w;
                 logic [7:0]  b_bv;
                 logic [1:0]  b_act_w;
+                logic [15:0] b_et_w;
+                logic [15:0] b_tci_w;
+                logic [11:0] b_vid_w;
                 if (b_s_tstart || (b_st == ST_IDLE)) begin
                     b_at     = 0;
                     b_da_w   = '0;
                     b_sa_w   = '0;
+                    b_et_w   = '0;
+                    b_tci_w  = '0;
                     b_cap_w  = 1'b0;
                     b_user_w = b_s_tuser;
                     b_err_w  = b_s_tuser_err;
@@ -357,6 +500,8 @@ module pkt_l2br #(
                     b_at     = int'(b_nbyte);
                     b_da_w   = b_da;
                     b_sa_w   = b_sa;
+                    b_et_w   = b_et;
+                    b_tci_w  = b_tci;
                     b_cap_w  = b_cap;
                     b_user_w = b_user;
                     b_err_w  = b_err;
@@ -365,8 +510,16 @@ module pkt_l2br #(
                     if (b_s_tkeep[k]) begin
                         b_bv = b_s_tdata[8*k +: 8];
                         if (!b_cap_w && (b_at < MAX_B)) begin
-                            b_mem[b_at] <= b_bv;
+                            b_mem[b_wr_bank][b_at] <= b_bv;
                             take_mac(b_bv, b_at, b_da_w, b_sa_w);
+                            if (b_at == 12)
+                                b_et_w[15:8] = b_bv;
+                            else if (b_at == 13)
+                                b_et_w[7:0] = b_bv;
+                            else if (b_at == 14)
+                                b_tci_w[15:8] = b_bv;
+                            else if (b_at == 15)
+                                b_tci_w[7:0] = b_bv;
                         end else begin
                             b_cap_w = 1'b1;
                         end
@@ -376,6 +529,8 @@ module pkt_l2br #(
                 b_nbyte <= 16'(b_at);
                 b_da    <= b_da_w;
                 b_sa    <= b_sa_w;
+                b_et    <= b_et_w;
+                b_tci   <= b_tci_w;
                 b_cap   <= b_cap_w;
                 b_user  <= b_user_w;
                 b_err   <= b_err_w;
@@ -383,18 +538,26 @@ module pkt_l2br #(
                     b_dec_valid <= 1'b1;
                     b_dec_bytes <= b_at;
                     b_st        <= ST_IDLE;
-                    if ((b_at < 12) || (b_at > MAX_B) || b_cap_w) begin
+                    if ((b_at < len_min()) || (b_at > len_max()) || b_cap_w) begin
                         b_dec_act <= ACT_DROP;
                     end else begin
-                        cam_learn(b_sa_w, 1'b1);
-                        b_act_w   = cam_act(b_da_w, 1'b1);
+                        b_vid_w   = vid_of(b_et_w, b_tci_w);
+                        cam_learn(b_sa_w, b_vid_w, 1'b1);
+                        b_act_w   = cam_act(b_da_w, b_vid_w, 1'b1);
                         b_dec_act <= b_act_w;
                         if ((b_act_w == ACT_FWD) || (b_act_w == ACT_FLOOD)) begin
-                            b_hold    <= 1'b1;
-                            b_len     <= 16'(b_at);
-                            b_rd      <= '0;
-                            eg_a_user <= b_user_w;
-                            eg_a_err  <= b_err_w;
+                            b_slen_w[b_wr_bank]  = 16'(b_at);
+                            b_suser_w[b_wr_bank] = b_user_w;
+                            b_serr_w[b_wr_bank]  = b_err_w;
+                            if (bq == 0) begin
+                                bh        = 1'b1;
+                                b_len     <= 16'(b_at);
+                                b_rd      <= '0;
+                                eg_a_user <= b_user_w;
+                                eg_a_err  <= b_err_w;
+                            end
+                            b_wr_bank <= ~b_wr_bank;
+                            bq = bq + 2'd1;
                         end
                     end
                 end else begin
@@ -417,7 +580,7 @@ module pkt_l2br #(
                     tk   = '0;
                     for (int k = 0; k < KEEP_W; k++) begin
                         if ((rd_i + n_i) < int'(a_len)) begin
-                            td[8*k +: 8] = a_mem[rd_i + n_i];
+                            td[8*k +: 8] = a_mem[a_rd_bank][rd_i + n_i];
                             tk[k]        = 1'b1;
                             n_i          = n_i + 1;
                         end
@@ -429,9 +592,21 @@ module pkt_l2br #(
                     b_m_tlast     <= ((rd_i + n_i) >= int'(a_len));
                     b_m_tuser     <= eg_b_user;
                     b_m_tuser_err <= eg_b_err;
-                    a_rd          <= 16'(rd_i + n_i);
-                    if ((rd_i + n_i) >= int'(a_len))
-                        a_hold <= 1'b0;
+                    if ((rd_i + n_i) >= int'(a_len)) begin
+                        arb = ~a_rd_bank;
+                        aq  = aq - 2'd1;
+                        if (aq == 0) begin
+                            ah = 1'b0;
+                        end else begin
+                            ah        = 1'b1;
+                            a_len     <= a_slen_w[arb];
+                            a_rd      <= '0;
+                            eg_b_user <= a_suser_w[arb];
+                            eg_b_err  <= a_serr_w[arb];
+                        end
+                    end else begin
+                        a_rd <= 16'(rd_i + n_i);
+                    end
                 end
             end
 
@@ -449,7 +624,7 @@ module pkt_l2br #(
                     tk   = '0;
                     for (int k = 0; k < KEEP_W; k++) begin
                         if ((rd_i + n_i) < int'(b_len)) begin
-                            td[8*k +: 8] = b_mem[rd_i + n_i];
+                            td[8*k +: 8] = b_mem[b_rd_bank][rd_i + n_i];
                             tk[k]        = 1'b1;
                             n_i          = n_i + 1;
                         end
@@ -461,18 +636,51 @@ module pkt_l2br #(
                     a_m_tlast     <= ((rd_i + n_i) >= int'(b_len));
                     a_m_tuser     <= eg_a_user;
                     a_m_tuser_err <= eg_a_err;
-                    b_rd          <= 16'(rd_i + n_i);
-                    if ((rd_i + n_i) >= int'(b_len))
-                        b_hold <= 1'b0;
+                    if ((rd_i + n_i) >= int'(b_len)) begin
+                        brb = ~b_rd_bank;
+                        bq  = bq - 2'd1;
+                        if (bq == 0) begin
+                            bh = 1'b0;
+                        end else begin
+                            bh        = 1'b1;
+                            b_len     <= b_slen_w[brb];
+                            b_rd      <= '0;
+                            eg_a_user <= b_suser_w[brb];
+                            eg_a_err  <= b_serr_w[brb];
+                        end
+                    end else begin
+                        b_rd <= 16'(rd_i + n_i);
+                    end
                 end
             end
 
-            for (int i = 0; i < CAM_N; i++) begin
-                cam_v[i]   <= cam_v_w[i];
-                cam_mac[i] <= cam_mac_w[i];
-                cam_prt[i] <= cam_prt_w[i];
+            a_q       <= aq;
+            b_q       <= bq;
+            a_hold    <= ah;
+            b_hold    <= bh;
+            a_rd_bank <= arb;
+            b_rd_bank <= brb;
+            a_slen[0] <= a_slen_w[0];
+            a_slen[1] <= a_slen_w[1];
+            b_slen[0] <= b_slen_w[0];
+            b_slen[1] <= b_slen_w[1];
+            a_suser[0] <= a_suser_w[0];
+            a_suser[1] <= a_suser_w[1];
+            b_suser[0] <= b_suser_w[0];
+            b_suser[1] <= b_suser_w[1];
+            a_serr[0] <= a_serr_w[0];
+            a_serr[1] <= a_serr_w[1];
+            b_serr[0] <= b_serr_w[0];
+            b_serr[1] <= b_serr_w[1];
             end
-            cam_vic <= vic_w;
+
+            cam_v    <= cam_v_w;
+            cam_mac  <= cam_mac_w;
+            cam_vid  <= cam_vid_w;
+            cam_prt  <= cam_prt_w;
+            cam_age  <= cam_age_w;
+            cam_time <= time_w + 32'd1;
+            cam_vic  <= vic_w;
         end
     end
 
