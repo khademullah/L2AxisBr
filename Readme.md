@@ -124,7 +124,7 @@ File format and BPF stay in C. The MAC table and the datapath are clocked System
 | `docs/logo.jpg` | Logo, dark |
 | `docs/logo-2.jpg` | Logo, light |
 | `docs/already-on-the-wire.md` | Comparison with chips that already forward |
-| `site/` | Project page, `site.xml`, and `sitemap.xml` |
+| `docs/index.html` | Project page GitHub Pages serves from `docs/` |
 
 ## Regression
 

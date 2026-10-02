@@ -6,7 +6,7 @@
   <description>Two-port MAC-learning Ethernet bridge on AXI-Stream. Replay a pcap in Verilator. The SystemVerilog table and the C table have to agree.</description>
   <language>en</language>
   <license>MIT</license>
-  <logo>https://khademullah.github.io/L2AxisBr/logo.jpg</logo>
+  <logo>https://khademullah.github.io/L2AxisBr/logo-2.jpg</logo>
   <keywords>Ethernet bridge, AXI-Stream, MAC learning, SystemVerilog, Verilator, pcap, FPGA</keywords>
   <pages>
     <page>
