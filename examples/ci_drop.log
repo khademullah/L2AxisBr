@@ -1,0 +1,19 @@
+[SV] Opening drop.pcap
+[C-DPI] Successfully opened drop.pcap
+[SV] Datalink DLT=1 (Ethernet)
+[SV] Streaming up to 8 packets into port A (BP=2, random tready)
+[SV] Packet #1 port A  54 B (wire 54) ts=1.000000
+[BR] A FLOOD  54 B  da=020000000002 sa=020000000001
+[SV] Packet #2 port A  8 B (wire 8) ts=2.000000
+[BR] A DROP  8 B  da=020000000002 sa=020000000000
+[SV] Packet #3 port A  54 B (wire 54) ts=3.000000
+[BR] A FILTER  54 B  da=020000000001 sa=020000000002
+
+[SV] Reached end of PCAP before hitting the packet cap.
+
+[SV] Simulation finished. File=drop.pcap  Streamed 3 packets.
+[BR] rx_a=3  rx_b=0  tx_a=0  tx_b=1  flood=1  fwd=0  filter=1  drop=1  byte_mis=0  mis=0
+- hdl/tb_l2br.sv:554: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 4us; walltime 0.009 s; speed 478.649 us/s
+- Verilator: cpu 0.007 s on 1 threads; alloced 25 MB

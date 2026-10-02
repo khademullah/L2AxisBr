@@ -1,0 +1,19 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  sim:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Verilator and libpcap
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator libpcap-dev python3
+          verilator --version
+      - name: Learning bridge gates
+        run: make ci

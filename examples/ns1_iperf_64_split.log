@@ -1,0 +1,139 @@
+[SV] Opening ns1_iperf.pcap
+[C-DPI] Successfully opened ns1_iperf.pcap
+[SV] Datalink DLT=1 (Ethernet)
+[SV] Streaming up to 64 packets into port by source MAC (BP=2, random tready)
+[SV] Packet #1 port A  74 B (wire 74) ts=1790921116.894162
+[BR] A FLOOD  74 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #2 port B  74 B (wire 74) ts=1790921116.894179
+[BR] B FWD  74 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #3 port A  66 B (wire 66) ts=1790921116.894186
+[BR] A FWD  66 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #4 port A  103 B (wire 103) ts=1790921116.894269
+[BR] A FWD  103 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #5 port B  66 B (wire 66) ts=1790921116.894274
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #6 port B  67 B (wire 67) ts=1790921116.894354
+[BR] B FWD  67 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #7 port A  66 B (wire 66) ts=1790921116.894387
+[BR] A FWD  66 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #8 port A  70 B (wire 70) ts=1790921116.894559
+[BR] A FWD  70 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #9 port A  189 B (wire 189) ts=1790921116.894593
+[BR] A FWD  189 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #10 port B  66 B (wire 66) ts=1790921116.894943
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #11 port B  67 B (wire 67) ts=1790921116.894975
+[BR] B FWD  67 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #12 port A  74 B (wire 74) ts=1790921116.895086
+[BR] A FWD  74 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #13 port B  74 B (wire 74) ts=1790921116.895095
+[BR] B FWD  74 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #14 port A  66 B (wire 66) ts=1790921116.895099
+[BR] A FWD  66 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #15 port A  103 B (wire 103) ts=1790921116.895107
+[BR] A FWD  103 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #16 port B  66 B (wire 66) ts=1790921116.895109
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #17 port B  67 B (wire 67) ts=1790921116.896221
+[BR] B FWD  67 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #18 port B  67 B (wire 67) ts=1790921116.896252
+[BR] B FWD  67 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #19 port A  66 B (wire 66) ts=1790921116.896514
+[BR] A FWD  66 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #20 port A  2048 B (wire 7306) ts=1790921116.896644
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #21 port B  66 B (wire 66) ts=1790921116.896681
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #22 port A  2048 B (wire 7306) ts=1790921116.896689
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #23 port B  66 B (wire 66) ts=1790921116.896691
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #24 port A  2048 B (wire 14546) ts=1790921116.896708
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #25 port B  66 B (wire 66) ts=1790921116.896709
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #26 port A  2048 B (wire 14546) ts=1790921116.896711
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #27 port B  66 B (wire 66) ts=1790921116.896713
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #28 port A  2048 B (wire 29026) ts=1790921116.896715
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #29 port A  2048 B (wire 29026) ts=1790921116.896717
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #30 port B  66 B (wire 66) ts=1790921116.896729
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #31 port A  2048 B (wire 57986) ts=1790921116.896741
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #32 port A  2048 B (wire 37378) ts=1790921116.896805
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #33 port B  66 B (wire 66) ts=1790921116.896814
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #34 port B  66 B (wire 66) ts=1790921116.896821
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #35 port A  2048 B (wire 65226) ts=1790921116.896826
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #36 port A  2048 B (wire 30138) ts=1790921116.896853
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #37 port B  66 B (wire 66) ts=1790921116.896883
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #38 port A  2048 B (wire 65226) ts=1790921116.896958
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #39 port B  66 B (wire 66) ts=1790921116.896986
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #40 port A  2048 B (wire 30138) ts=1790921116.896989
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #41 port A  2048 B (wire 65226) ts=1790921116.896992
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #42 port A  2048 B (wire 52194) ts=1790921116.896994
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #43 port B  66 B (wire 66) ts=1790921116.897026
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #44 port A  2048 B (wire 65226) ts=1790921116.897047
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #45 port B  66 B (wire 66) ts=1790921116.897076
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #46 port A  2048 B (wire 36282) ts=1790921116.897079
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #47 port A  2048 B (wire 65226) ts=1790921116.897082
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #48 port B  66 B (wire 66) ts=1790921116.897114
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #49 port A  2048 B (wire 56386) ts=1790921116.897119
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #50 port B  66 B (wire 66) ts=1790921116.897160
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #51 port A  2048 B (wire 65226) ts=1790921116.897162
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #52 port A  2048 B (wire 33210) ts=1790921116.897163
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #53 port B  66 B (wire 66) ts=1790921116.897171
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #54 port B  66 B (wire 66) ts=1790921116.897175
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #55 port A  2048 B (wire 65226) ts=1790921116.897176
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #56 port A  2048 B (wire 65226) ts=1790921116.897177
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #57 port A  2048 B (wire 18226) ts=1790921116.897178
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #58 port B  66 B (wire 66) ts=1790921116.897185
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #59 port A  2048 B (wire 65226) ts=1790921116.897187
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #60 port A  2048 B (wire 65226) ts=1790921116.897189
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #61 port A  2048 B (wire 18226) ts=1790921116.897190
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #62 port B  66 B (wire 66) ts=1790921116.897193
+[BR] B FWD  66 B  da=020000000001 sa=badc18c5a289
+[SV] Packet #63 port A  2048 B (wire 65226) ts=1790921116.897195
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+[SV] Packet #64 port A  2048 B (wire 65226) ts=1790921116.897196
+[BR] A FWD  2048 B  da=badc18c5a289 sa=020000000001
+
+[SV] Simulation finished. File=ns1_iperf.pcap  Streamed 64 packets.
+[BR] rx_a=38  rx_b=26  tx_a=26  tx_b=38  flood=1  fwd=63  filter=0  drop=0  byte_mis=0  mis=0
+- hdl/tb_l2br.sv:554: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 2ms; walltime 3.367 s; speed 696.367 us/s
+- Verilator: cpu 3.357 s on 1 threads; alloced 25 MB

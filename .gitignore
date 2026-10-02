@@ -1,0 +1,7 @@
+obj_dir/
+*.vcd
+*.log
+!examples/*.log
+*.pcap
+!ns1_iperf.pcap
+.venv/

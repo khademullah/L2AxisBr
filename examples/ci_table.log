@@ -1,0 +1,49 @@
+[SV] Opening table.pcap
+[C-DPI] Successfully opened table.pcap
+[SV] Datalink DLT=1 (Ethernet)
+[SV] Streaming up to 32 packets into port A (BP=2, random tready)
+[SV] Packet #1 port A  34 B (wire 34) ts=1.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000001
+[SV] Packet #2 port A  34 B (wire 34) ts=2.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000002
+[SV] Packet #3 port A  34 B (wire 34) ts=3.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000003
+[SV] Packet #4 port A  34 B (wire 34) ts=4.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000004
+[SV] Packet #5 port A  34 B (wire 34) ts=5.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000005
+[SV] Packet #6 port A  34 B (wire 34) ts=6.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000006
+[SV] Packet #7 port A  34 B (wire 34) ts=7.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000007
+[SV] Packet #8 port A  34 B (wire 34) ts=8.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000008
+[SV] Packet #9 port A  34 B (wire 34) ts=9.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000009
+[SV] Packet #10 port A  34 B (wire 34) ts=10.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=02000000000a
+[SV] Packet #11 port A  34 B (wire 34) ts=11.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=02000000000b
+[SV] Packet #12 port A  34 B (wire 34) ts=12.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=02000000000c
+[SV] Packet #13 port A  34 B (wire 34) ts=13.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=02000000000d
+[SV] Packet #14 port A  34 B (wire 34) ts=14.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=02000000000e
+[SV] Packet #15 port A  34 B (wire 34) ts=15.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=02000000000f
+[SV] Packet #16 port A  34 B (wire 34) ts=16.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000010
+[SV] Packet #17 port A  34 B (wire 34) ts=17.000000
+[BR] A FLOOD  34 B  da=ffffffffffff sa=020000000011
+[SV] Packet #18 port A  34 B (wire 34) ts=18.000000
+[BR] A FILTER  34 B  da=020000000001 sa=020000000012
+
+[SV] Reached end of PCAP before hitting the packet cap.
+
+[SV] Simulation finished. File=table.pcap  Streamed 18 packets.
+[BR] rx_a=18  rx_b=0  tx_a=0  tx_b=17  flood=17  fwd=0  filter=1  drop=0  byte_mis=0  mis=0
+- hdl/tb_l2br.sv:554: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 24us; walltime 0.032 s; speed 868.168 us/s
+- Verilator: cpu 0.028 s on 1 threads; alloced 25 MB
