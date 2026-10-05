@@ -93,6 +93,14 @@
       </div>
       <p>Set each <code>tdata</code> to hex. A beat is only the cycles where that group's <code>tvalid</code> and <code>tready</code> are both 1. <code>tready</code> alone is not a transfer. Zoom to one pulse of that group's <code>tstart</code>, then across to its <code>tlast</code>. That span is one frame.</p>
       <p>A window that runs from 0 to 1,046,375 ns is the whole file. One clock in this bench is 10 ns, so that green band is many transfers drawn on top of each other. In that file <code>ha_*</code> and <code>a_*</code> are the same wires, because the example NICs were not compiled in. The recording below is a two-frame run with a NIC on each port, so the host, NIC A, and NIC B fall at three different times. The bytes are the first frame of <code>ns1_iperf.pcap</code>.</p>
+      <ol>
+        <li>Zoom until one clock is one column. A transfer is that column only when <code>tvalid</code> and <code>tready</code> are both 1. The times below are in nanoseconds because this clock is 10 ns. GTKWave can show picoseconds, nanoseconds, or microseconds. Pick the unit that makes one rising edge one column.</li>
+        <li>Host A at 45 ns. <code>ha_tstart</code> is 1 and both pins are 1. The byte is <code>ba</code>, the first byte of the destination. That column is one transfer. The next column is <code>dc</code>.</li>
+        <li>Keep walking to <code>ha_tlast</code>. It rises at 775 ns on byte <code>0a</code>. Both pins stayed high, so the host made 74 transfers. The frame is 74 bytes.</li>
+        <li>NIC A drives the same bytes on <code>a_*</code> after it has stored the frame. At 795 ns <code>a_tvalid</code> is 1 and <code>a_tready</code> is 0, so <code>dc</code> does not move. At 805 ns both pins are 1, and <code>dc</code> enters the bridge.</li>
+        <li>The bridge floods the frame. At 2265 ns <code>b_m_tstart</code> is 1 and both pins are 1. NIC B takes <code>ba</code>, then the rest of the same 74 bytes. Same checks, next port.</li>
+      </ol>
+      <p>A frame on <code>ha_*</code> shows up later on <code>a_*</code>, after NIC A has stored it and started sending. If that frame is flooded or forwarded, the same bytes then show up on <code>b_m_*</code>. A frame on <code>hb_*</code> shows up on <code>b_*</code>, and if it is flooded or forwarded, on <code>a_m_*</code>. If the frame is filtered or dropped, the other master stays quiet through that <code>tlast</code>. On a port-A-only run, <code>a_*</code> is busy and <code>b_m_*</code> pulses only for the one flood.</p>
       <p>Each picture stays up until you choose the next step. <code>make run NIC=1 PCAP=ns1_iperf.pcap MAX_PACKETS=2 BP=1 SPLIT=1</code>.</p>
       <div class="reader">
         <input type="radio" name="wave" id="wave-1" checked>
@@ -174,14 +182,12 @@
           <div class="reader-nav"><label for="gw-3">Previous</label><span>4 of 4</span><span class="is-off next">Next</span></div>
         </article>
       </div>
-      <ol>
-        <li>Zoom until one clock is one column. A transfer is that column only when <code>tvalid</code> and <code>tready</code> are both 1. The times below are in nanoseconds because this clock is 10 ns. GTKWave can show picoseconds, nanoseconds, or microseconds. Pick the unit that makes one rising edge one column.</li>
-        <li>Host A at 45 ns. <code>ha_tstart</code> is 1 and both pins are 1. The byte is <code>ba</code>, the first byte of the destination. That column is one transfer. The next column is <code>dc</code>.</li>
-        <li>Keep walking to <code>ha_tlast</code>. It rises at 775 ns on byte <code>0a</code>. Both pins stayed high, so the host made 74 transfers. The frame is 74 bytes.</li>
-        <li>NIC A drives the same bytes on <code>a_*</code> after it has stored the frame. At 795 ns <code>a_tvalid</code> is 1 and <code>a_tready</code> is 0, so <code>dc</code> does not move. At 805 ns both pins are 1, and <code>dc</code> enters the bridge.</li>
-        <li>The bridge floods the frame. At 2265 ns <code>b_m_tstart</code> is 1 and both pins are 1. NIC B takes <code>ba</code>, then the rest of the same 74 bytes. Same checks, next port.</li>
-      </ol>
-      <p>A frame on <code>ha_*</code> shows up later on <code>a_*</code>, after NIC A has stored it and started sending. If that frame is flooded or forwarded, the same bytes then show up on <code>b_m_*</code>. A frame on <code>hb_*</code> shows up on <code>b_*</code>, and if it is flooded or forwarded, on <code>a_m_*</code>. If the frame is filtered or dropped, the other master stays quiet through that <code>tlast</code>. On a port-A-only run, <code>a_*</code> is busy and <code>b_m_*</code> pulses only for the one flood.</p>
+      <p>The two digits in a box are one byte. <code>ha_tdata</code> is <code>ha_tdata[7:0]</code>, eight bits. With the bus set to hex, one digit stands for four bits, so the box reads <code>00</code>. That is a single byte whose value is 0. The next column that also reads <code>00</code> is the next byte.</p>
+      <p>Each column where <code>tvalid</code> and <code>tready</code> are both 1 is one byte. On the longer recording, the one that ends at 1,046,375 ns, the source address <code>02:00:00:00:00:01</code> is six columns. <code>02</code> is at 2365 ns. Then four columns of <code>00</code>, at 2375, 2385, 2395, and 2405 ns. Then <code>01</code> at 2415 ns. Those four <code>00</code> boxes are four bytes.</p>
+      <p>Count the columns by hand. Start on the first column after that <code>00</code> at 2375 ns, and stop on the column where <code>ha_tlast</code> rises. On this frame that column is at 3325 ns and the byte is <code>00</code>. Both pins stay 1, so every column counts. There are 95. The frame itself opened at 2305 ns on <code>BA</code> and is 103 bytes.</p>
+      <p>A 10 ns gap is one clock in this bench. The clock toggles every 5 ns, so one period is 10 ns, and one period moves one byte. The byte is taken on the rising edge, when both pins are 1. The falling edge is the other half of that same clock. The testbench changes <code>tdata</code> then, so the new byte is waiting, and the bridge takes it on the next rising edge. One full clock, high half and low half, is one byte.</p>
+      <p>Another trace uses its own clock. If that period is 4 ns, the columns are 4 ns apart, and you count those columns. The handshake is the same on any period: both pins high on the rising edge. A column where <code>tvalid</code> is 1 and <code>tready</code> is 0 holds the byte. It counts on the later column where both pins are 1.</p>
+      <p>Find the clock period first, then zoom until that gap is one column, and read the wave one column at a time. In this bench the gap is 10 ns. A byte is on that column when <code>tvalid</code> and <code>tready</code> are both 1. When <code>tready</code> is 0 the column still draws the byte, and the byte waits for the next column where both pins are high.</p>
     </section>
   </main>
 
