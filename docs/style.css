@@ -138,23 +138,27 @@ section { padding: 0 8vw 2.6rem; }
   position: absolute;
   width: 1px;
   height: 1px;
+  margin: 0;
   opacity: 0;
+  pointer-events: none;
 }
-.reader-slide { display: none; }
-.reader:has(#wave-1:checked) .s1,
-.reader:has(#wave-2:checked) .s2,
-.reader:has(#wave-3:checked) .s3,
-.reader:has(#wave-4:checked) .s4,
-.reader:has(#wave-5:checked) .s5,
-.reader:has(#wave-6:checked) .s6,
-.reader:has(#wave-7:checked) .s7,
-.reader:has(#wave-8:checked) .s8,
-.reader:has(#gw-1:checked) .g1,
-.reader:has(#gw-2:checked) .g2,
-.reader:has(#gw-3:checked) .g3,
-.reader:has(#gw-4:checked) .g4 { display: block; }
-.reader-slide img { margin-top: 0; }
-.reader-slide p { margin-top: 0.8rem; }
+.reader-slide {
+  display: none;
+  font-size: 18px;
+  line-height: 1.55;
+}
+.reader input:checked + .reader-slide { display: block; }
+.reader-slide img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 0;
+}
+.reader-slide p {
+  margin-top: 0.8rem;
+  font-size: 18px;
+  line-height: 1.55;
+}
 .reader-nav {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
