@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>L2AxisBr — DPI-C</title>
+  <meta name="description" content="DPI-C calls in tb_l2br.sv. The pcap reader and the C MAC table are the only C on the bench.">
+  <link rel="icon" href="logo.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="index.html">L2AxisBr</a>
+    <nav>
+      <a href="path.html">Path</a>
+      <a href="#pcap">Pcap</a>
+      <a href="#table">Table</a>
+      <a href="https://github.com/khademullah/L2AxisBr">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="kicker">tb_l2br.sv · DPI-C</p>
+      <h1>The bench calls C. The bridge does not.</h1>
+      <p class="lede">Every DPI-C call is in <code>hdl/tb_l2br.sv</code>. <code>pkt_l2br</code> never calls C. The imports are at the top of the testbench. File format and BPF come from <code>dpi/pcap_reader.c</code>. The MAC-table twin is <code>dpi/l2_model.c</code>.</p>
+    </section>
+
+    <section class="step" id="pcap">
+      <h2>Pcap reader</h2>
+      <p>These run once before the replay, then once per frame. A beat on the AXI-Stream is still <code>tvalid &amp;&amp; tready</code> in SystemVerilog. C only hands the bench the stored bytes.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Function</th><th>Returns</th><th>Line</th><th>Role</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>open_pcap(filename)</code></td><td><code>int</code></td><td>662</td><td>Opens the file named by <code>+PCAP=</code>. A nonzero return ends the sim.</td></tr>
+            <tr><td><code>get_datalink()</code></td><td><code>int</code></td><td>666</td><td>Requires DLT 1. Anything else closes the file and stops.</td></tr>
+            <tr><td><code>set_pcap_filter(filter)</code></td><td><code>int</code></td><td>674</td><td>Installs <code>+FILTER=</code> when that plusarg is set. Failure closes the file.</td></tr>
+            <tr><td><code>close_pcap()</code></td><td>void</td><td>670, 676, 717, 758, 815</td><td>Closes the file on a bad DLT, a bad filter, an oversized frame, or at the end.</td></tr>
+            <tr><td><code>fetch_next_packet()</code></td><td><code>int</code></td><td>710, 752</td><td>Next stored length. Zero means the file ended. Line 752 is the second frame when <code>BOTH=1</code>.</td></tr>
+            <tr><td><code>get_wire_len()</code></td><td><code>int</code></td><td>720, 768</td><td>On-wire length. It can be larger than the stored snaplen.</td></tr>
+            <tr><td><code>get_ts_sec()</code></td><td><code>longint</code></td><td>721, 768</td><td>Seconds field. <code>ts_sec != 0</code> selects port B when <code>PORT_TS=1</code>.</td></tr>
+            <tr><td><code>get_ts_usec()</code></td><td><code>int</code></td><td>722, 768</td><td>Microseconds field. With <code>TS_GAP=1</code> that value is idle clocks before the frame.</td></tr>
+            <tr><td><code>get_packet_byte()</code></td><td><code>int</code></td><td>725, 765</td><td>Copies the stored frame into <code>frm</code> or <code>frm_b</code>, one byte per call.</td></tr>
+            <tr><td><code>get_fingerprint()</code></td><td><code>int unsigned</code></td><td>740, 744, 763</td><td>Fingerprint saved as <code>exp_sum_a</code> or <code>exp_sum_b</code> before the frame is driven.</td></tr>
+            <tr><td><code>get_bpf_match()</code></td><td><code>int</code></td><td>817</td><td>Printed after <code>close_pcap</code> when a filter was installed.</td></tr>
+            <tr><td><code>get_bpf_skip()</code></td><td><code>int</code></td><td>817</td><td>Frames the BPF filter dropped before they reached the bridge.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><code>score_ing</code> compares the observer sum on the ingress wire with the fingerprint saved above. A mismatch increments <code>mis</code>.</p>
+    </section>
+
+    <section class="step" id="table">
+      <h2>MAC table</h2>
+      <p>This is the C twin of <code>pkt_l2br</code>. The same plusargs are copied in once, then each accepted frame is predicted, and the 1024 slots are compared after traffic stops.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Function</th><th>Returns</th><th>Line</th><th>Role</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>l2_set_age(n)</code></td><td>void</td><td>655</td><td>Copies <code>+AGE=</code> into the C table once reset rises.</td></tr>
+            <tr><td><code>l2_set_len(mode)</code></td><td>void</td><td>656</td><td>Copies <code>+LEN=</code>. Mode 0 is 12 to 2048, mode 1 is 64 to 1518, mode 2 is 64 to 9000.</td></tr>
+            <tr><td><code>l2_set_mcast(en)</code></td><td>void</td><td>657</td><td>Copies <code>+MCAST=</code>. When set, one static group is installed on port B.</td></tr>
+            <tr><td><code>l2_reset()</code></td><td>void</td><td>658</td><td>Clears the C table on that same reset.</td></tr>
+            <tr><td><code>l2_predict(port, da, sa, nbytes, vid)</code></td><td><code>int</code></td><td>334</td><td>Called from <code>score_ing</code> for each accepted ingress frame. Returns 0 filter, 1 forward, 2 flood, or 3 drop. A mismatch with <code>a_dec_act</code> or <code>b_dec_act</code> increments <code>mis</code>.</td></tr>
+            <tr><td><code>l2_tick()</code></td><td>void</td><td>506</td><td>One C-table clock per <code>posedge clk</code> while <code>rst_n</code> is high, after the observers score that edge.</td></tr>
+            <tr><td><code>l2_slot_valid(i)</code></td><td><code>int</code></td><td>801</td><td>Valid bit of C slot <code>i</code>, compared with <code>u_br.cam_v</code>.</td></tr>
+            <tr><td><code>l2_slot_mac(i)</code></td><td><code>longint</code></td><td>804</td><td>MAC in that slot, compared with <code>u_br.cam_mac</code>.</td></tr>
+            <tr><td><code>l2_slot_port(i)</code></td><td><code>int</code></td><td>805</td><td>Port in that slot, compared with <code>u_br.cam_prt</code>.</td></tr>
+            <tr><td><code>l2_slot_vid(i)</code></td><td><code>int</code></td><td>806</td><td>VID in that slot, compared with <code>u_br.cam_vid</code>. A mismatch on any of the four is added to <code>mis</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The slot walk runs after the ports go idle. It covers all 1024 entries. Stamps are not compared.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>MIT. <a href="https://github.com/khademullah/L2AxisBr">khademullah/L2AxisBr</a></p>
+  </footer>
+</body>
+</html>

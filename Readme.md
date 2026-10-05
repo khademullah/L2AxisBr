@@ -96,9 +96,9 @@ Each ingress port is the [`nic_rx`](https://github.com/khademullah/Pcap2HDL) sla
 
 ## Data path
 
-The first 64 frames are drawn one step at a time in [docs/path.html](docs/path.html).
+The first 64 frames are drawn one step at a time in [docs/path.html](docs/path.html). The two-NIC order, rules then the NICs then the frames, is in [docs/run.html](docs/run.html).
 
-File format and BPF stay in C. The MAC table and the datapath are clocked SystemVerilog. Default width is 8 bits. `AXIS_W=64` packs eight bytes per beat.
+File format and BPF stay in C. The MAC table and the datapath are clocked SystemVerilog. The DPI-C calls, and where `hdl/tb_l2br.sv` uses each one, are in [docs/dpi.html](docs/dpi.html). Default width is 8 bits. `AXIS_W=64` packs eight bytes per beat.
 
 ## Layout
 
@@ -109,6 +109,8 @@ File format and BPF stay in C. The MAC table and the datapath are clocked System
 | `hdl/tb_l2br.sv` | pcap master and scoreboard |
 | `dpi/pcap_reader.c` | libpcap read, BPF, byte fingerprint |
 | `dpi/l2_model.c` | C MAC table |
+| `docs/dpi.html` | DPI-C functions and where the testbench calls them |
+| `docs/run.html` | End to end: rules, then the two NICs, then the frames |
 | `ns1_iperf.pcap` | iperf3 veth capture |
 | `scripts/gen_pcap.py` | Seven-frame regression pcap used by `make ci` |
 | `examples/` | Logs for the capture and for the regression |

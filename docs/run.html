@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>L2AxisBr — end to end</title>
+  <meta name="description" content="Rules load into an empty table, two NICs connect, then the first frames cross the bridge.">
+  <link rel="icon" href="logo.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="index.html">L2AxisBr</a>
+    <nav>
+      <a href="#rules">Rules</a>
+      <a href="#nics">NICs</a>
+      <a href="#frames">Frames</a>
+      <a href="path.html">Path</a>
+      <a href="https://github.com/khademullah/L2AxisBr">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="kicker">make nics · first frames</p>
+      <h1>Rules, then the NICs, then the frames</h1>
+      <p class="lede">One two-NIC run, in the order the bench actually starts. The table is empty. The rules are copied into both twins. The NICs attach. Then host A and host B exchange frames, and <code>mis</code> stays 0.</p>
+    </section>
+
+    <section class="step" id="rules">
+      <h2>1. The rules go in</h2>
+      <p>Reset rises before the pcap opens. <code>l2_set_age</code>, <code>l2_set_len</code>, and <code>l2_set_mcast</code> copy the plusargs into the C table, and <code>l2_reset</code> clears it. The SystemVerilog table clears on the same reset. On <code>make nics</code> those plusargs are the defaults: aging off, 12 to 2048 bytes, no static multicast group.</p>
+      <img src="fig-rules.svg" alt="Both tables start empty. Four rules: learn the source, flood a miss, forward to the other port, and do not send a destination that is already on this port.">
+    </section>
+
+    <section class="step" id="nics">
+      <h2>2. The two NICs connect</h2>
+      <p><code>make nics</code> places one example NIC on each port. NIC A sends into <code>a_s_*</code> and receives from <code>a_m_*</code>. NIC B sends into <code>b_s_*</code> and receives from <code>b_m_*</code>. The pcap is the host behind each NIC. A frame from one host reaches the other NIC only by crossing the bridge.</p>
+      <img src="fig-links.svg" alt="NIC A and NIC B, each with an AXI-Stream into pkt_l2br and an AXI-Stream out of it">
+    </section>
+
+    <section class="step" id="frames">
+      <h2>3. The frames start to move</h2>
+      <p>Host A is <code>02:00:00:00:00:01</code> on port A. Host B is <code>ba:dc:18:c5:a2:89</code> on port B. Packet 1 is 74 bytes from A to B. The source is saved on port A, the destination misses, and NIC B receives the flood. Packet 2 is 74 bytes from B to A. The source is saved on port B, host A is already on port A, and NIC A receives the forward.</p>
+      <img src="fig-exchange.svg" alt="Packet 1 floods from NIC A to NIC B. Packet 2 is forwarded from NIC B back to NIC A.">
+      <p>The recording is the first 8 frames of that run, slow enough to read. Amber is a frame that NIC sent into the bridge. Blue is a frame that arrived from the bridge. In the simulator the receive line prints when the last byte lands, which can be under the next packet header. NIC A sent 5 and received 3. NIC B sent 3 and received 5.</p>
+      <figure class="demo">
+        <img src="nics.gif" alt="Three terminals. The bridge floods the first frame from NIC A to NIC B, then forwards the return frame from NIC B to NIC A.">
+        <figcaption><code>rx_a=5 rx_b=3 tx_a=3 tx_b=5 flood=1 fwd=7 filter=0 mis=0</code>. <a href="nics.gif">The recording</a>.</figcaption>
+      </figure>
+    </section>
+  </main>
+
+  <footer>
+    <p>MIT. <a href="https://github.com/khademullah/L2AxisBr">khademullah/L2AxisBr</a></p>
+  </footer>
+</body>
+</html>

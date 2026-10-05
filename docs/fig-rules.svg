@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 640" role="img" aria-labelledby="t d">
+  <title id="t">Rules loaded into an empty table</title>
+  <desc id="d">Before any frame, both the SystemVerilog table and the C table are empty. The same four rules are already in both.</desc>
+  <rect width="1400" height="640" fill="#fefbf2"/>
+  <style>
+    .s { font-family: "Segoe UI", Calibri, sans-serif; fill: #1a2744; }
+    .m { font-family: ui-monospace, Consolas, monospace; fill: #1a2744; }
+    .d { fill: #4d5870; }
+  </style>
+
+  <text x="48" y="52" class="s" font-size="28">The rules are in before the first frame.</text>
+
+  <rect x="48" y="84" width="420" height="400" fill="#fffdf8" stroke="#1a2744" stroke-width="1.6"/>
+  <text x="258" y="130" class="s" font-size="22" text-anchor="middle">Both tables, after reset</text>
+  <text x="72" y="180" class="m" font-size="18">pkt_l2br</text>
+  <text x="72" y="210" class="s d" font-size="18">1024 slots, all empty</text>
+  <text x="72" y="270" class="m" font-size="18">dpi/l2_model.c</text>
+  <text x="72" y="300" class="s d" font-size="18">1024 slots, all empty</text>
+  <text x="72" y="370" class="s" font-size="17">l2_set_age, l2_set_len,</text>
+  <text x="72" y="396" class="s" font-size="17">l2_set_mcast, then l2_reset.</text>
+  <text x="72" y="444" class="s d" font-size="16">No MAC is stored yet.</text>
+
+  <rect x="508" y="84" width="844" height="400" fill="#fffdf8" stroke="#1a2744" stroke-width="1.6"/>
+  <text x="536" y="130" class="s" font-size="22">The four rules</text>
+  <text x="536" y="184" class="m" font-size="18">1</text>
+  <text x="572" y="184" class="s" font-size="18">A unicast source is saved on the port that received it.</text>
+  <text x="536" y="244" class="m" font-size="18">2</text>
+  <text x="572" y="244" class="s" font-size="18">An unknown destination, a broadcast, or a multicast</text>
+  <text x="572" y="272" class="s" font-size="18">floods out the other port.</text>
+  <text x="536" y="332" class="m" font-size="18">3</text>
+  <text x="572" y="332" class="s" font-size="18">A destination already known on the other port is forwarded.</text>
+  <text x="536" y="392" class="m" font-size="18">4</text>
+  <text x="572" y="392" class="s" font-size="18">A destination already known on this port is not sent.</text>
+  <text x="536" y="452" class="s d" font-size="16">Under 12 bytes or over 2048 bytes is dropped, and nothing is learned.</text>
+
+  <text x="48" y="540" class="s" font-size="18">This run keeps AGE at 0, so an entry stays until it is replaced.</text>
+  <text x="48" y="572" class="s" font-size="18">MCAST is off, so every multicast still floods. The C twin is given the same three settings.</text>
+</svg>

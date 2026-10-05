@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 720" role="img" aria-labelledby="t d">
+  <title id="t">The first two frames cross the bridge</title>
+  <desc id="d">Packet 1 from NIC A floods to NIC B. Packet 2 from NIC B is forwarded back to NIC A.</desc>
+  <rect width="1400" height="720" fill="#fefbf2"/>
+  <style>
+    .s { font-family: "Segoe UI", Calibri, sans-serif; fill: #1a2744; }
+    .m { font-family: ui-monospace, Consolas, monospace; fill: #1a2744; }
+    .d { fill: #4d5870; }
+  </style>
+
+  <text x="48" y="48" class="s" font-size="26">Packet 1 floods. Packet 2 is forwarded back.</text>
+
+  <rect x="48" y="78" width="300" height="250" fill="#fffdf8" stroke="#1a2744" stroke-width="1.6"/>
+  <text x="198" y="118" class="s" font-size="22" text-anchor="middle">NIC A sends</text>
+  <text x="198" y="158" class="m" font-size="15" text-anchor="middle">src 02:00:00:00:00:01</text>
+  <text x="198" y="186" class="m" font-size="15" text-anchor="middle">dst ba:dc:18:c5:a2:89</text>
+  <text x="198" y="230" class="s" font-size="18" text-anchor="middle">74 bytes, IPv4</text>
+  <text x="198" y="268" class="s d" font-size="16" text-anchor="middle">into port A</text>
+
+  <rect x="550" y="78" width="300" height="250" fill="#fffdf8" stroke="#1a2744" stroke-width="1.6"/>
+  <text x="700" y="118" class="s" font-size="22" text-anchor="middle">The bridge</text>
+  <text x="700" y="168" class="s" font-size="17" text-anchor="middle">Saves host A on port A.</text>
+  <text x="700" y="200" class="s" font-size="17" text-anchor="middle">Host B is not in the table.</text>
+  <text x="700" y="248" class="s" font-size="20" text-anchor="middle">Flood</text>
+
+  <rect x="1052" y="78" width="300" height="250" fill="#fffdf8" stroke="#1a2744" stroke-width="1.6"/>
+  <text x="1202" y="118" class="s" font-size="22" text-anchor="middle">NIC B receives</text>
+  <text x="1202" y="168" class="s" font-size="18" text-anchor="middle">The same 74 bytes.</text>
+  <text x="1202" y="206" class="m" font-size="15" text-anchor="middle">02:00:00:00:00:01</text>
+  <text x="1202" y="234" class="s d" font-size="16" text-anchor="middle">to</text>
+  <text x="1202" y="262" class="m" font-size="15" text-anchor="middle">ba:dc:18:c5:a2:89</text>
+
+  <line x1="348" y1="200" x2="540" y2="200" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="540,200 526,192 526,208" fill="#1a2744"/>
+  <line x1="850" y1="200" x2="1042" y2="200" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="1042,200 1028,192 1028,208" fill="#1a2744"/>
+
+  <rect x="48" y="400" width="300" height="250" fill="#fffdf8" stroke="#1a2744" stroke-width="1.6"/>
+  <text x="198" y="440" class="s" font-size="22" text-anchor="middle">NIC B sends</text>
+  <text x="198" y="480" class="m" font-size="15" text-anchor="middle">src ba:dc:18:c5:a2:89</text>
+  <text x="198" y="508" class="m" font-size="15" text-anchor="middle">dst 02:00:00:00:00:01</text>
+  <text x="198" y="552" class="s" font-size="18" text-anchor="middle">74 bytes, IPv4</text>
+  <text x="198" y="590" class="s d" font-size="16" text-anchor="middle">into port B</text>
+
+  <rect x="550" y="400" width="300" height="250" fill="#fffdf8" stroke="#1a2744" stroke-width="1.6"/>
+  <text x="700" y="440" class="s" font-size="22" text-anchor="middle">The bridge</text>
+  <text x="700" y="490" class="s" font-size="17" text-anchor="middle">Saves host B on port B.</text>
+  <text x="700" y="522" class="s" font-size="17" text-anchor="middle">Host A is already on port A.</text>
+  <text x="700" y="570" class="s" font-size="20" text-anchor="middle">Forward</text>
+
+  <rect x="1052" y="400" width="300" height="250" fill="#fffdf8" stroke="#1a2744" stroke-width="1.6"/>
+  <text x="1202" y="440" class="s" font-size="22" text-anchor="middle">NIC A receives</text>
+  <text x="1202" y="490" class="s" font-size="18" text-anchor="middle">The same 74 bytes.</text>
+  <text x="1202" y="528" class="m" font-size="15" text-anchor="middle">ba:dc:18:c5:a2:89</text>
+  <text x="1202" y="556" class="s d" font-size="16" text-anchor="middle">to</text>
+  <text x="1202" y="584" class="m" font-size="15" text-anchor="middle">02:00:00:00:00:01</text>
+
+  <line x1="348" y1="522" x2="540" y2="522" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="540,522 526,514 526,530" fill="#1a2744"/>
+  <line x1="850" y1="522" x2="1042" y2="522" stroke="#1a2744" stroke-width="2"/>
+  <polygon points="1042,522 1028,514 1028,530" fill="#1a2744"/>
+</svg>
