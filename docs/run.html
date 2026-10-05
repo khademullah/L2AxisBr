@@ -14,7 +14,9 @@
     <nav>
       <a href="#rules">Rules</a>
       <a href="#nics">NICs</a>
+      <a href="#ports">Ports</a>
       <a href="#frames">Frames</a>
+      <a href="#tips">Tips</a>
       <a href="path.html">Path</a>
       <a href="https://github.com/khademullah/L2AxisBr">GitHub</a>
     </nav>
@@ -39,6 +41,25 @@
       <img src="fig-links.svg" alt="NIC A and NIC B, each with an AXI-Stream into pkt_l2br and an AXI-Stream out of it">
     </section>
 
+    <section class="step" id="ports">
+      <h2>What a_s_*, b_s_*, a_m_*, and b_m_* are</h2>
+      <p>These are the four AXI-Stream ends of <code>pkt_l2br</code>. The <code>*</code> is the beat: <code>tdata</code>, <code>tkeep</code>, <code>tvalid</code>, <code>tready</code>, <code>tstart</code>, <code>tlast</code>, <code>tuser</code>, and <code>tuser_err</code>. <code>s</code> is a slave, so the bytes go into the bridge. <code>m</code> is a master, so the bytes come out. A beat counts only when <code>tvalid</code> and <code>tready</code> are both high. <code>ready_mask</code> and <code>pause_en</code> sit beside each slave and are not part of the star.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Direction</th><th>Who drives the bytes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>a_s_*</code></td><td>Into port A</td><td>NIC A, or the pcap bench</td></tr>
+            <tr><td><code>a_m_*</code></td><td>Out of port A</td><td>The bridge, toward NIC A</td></tr>
+            <tr><td><code>b_s_*</code></td><td>Into port B</td><td>NIC B, or the pcap bench</td></tr>
+            <tr><td><code>b_m_*</code></td><td>Out of port B</td><td>The bridge, toward NIC B</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>A frame that arrives on <code>a_s_*</code> and is flooded or forwarded leaves on <code>b_m_*</code>. A frame that arrives on <code>b_s_*</code> and is flooded or forwarded leaves on <code>a_m_*</code>. A filtered or dropped frame does not appear on the other master.</p>
+    </section>
+
     <section class="step" id="frames">
       <h2>3. The frames start to move</h2>
       <p>Host A is <code>02:00:00:00:00:01</code> on port A. Host B is <code>ba:dc:18:c5:a2:89</code> on port B. Packet 1 is 74 bytes from A to B. The source is saved on port A, the destination misses, and NIC B receives the flood. Packet 2 is 74 bytes from B to A. The source is saved on port B, host A is already on port A, and NIC A receives the forward.</p>
@@ -48,6 +69,29 @@
         <img src="nics.gif" alt="Three terminals. The bridge floods the first frame from NIC A to NIC B, then forwards the return frame from NIC B to NIC A.">
         <figcaption><code>rx_a=5 rx_b=3 tx_a=3 tx_b=5 flood=1 fwd=7 filter=0 mis=0</code>. <a href="nics.gif">The recording</a>.</figcaption>
       </figure>
+    </section>
+
+    <section class="step" id="tips">
+      <h2>Tips for the wave</h2>
+      <p>After a run, <code>make wave</code> opens <code>simulation_trace.vcd</code> in GTKWave. The trace is one flat list. Group the wires by port, then follow one frame from <code>tstart</code> to <code>tlast</code>. In the VCD the testbench names are <code>a_*</code> and <code>b_*</code>, not <code>a_s_*</code> and <code>b_s_*</code>. <code>a_*</code> is the slave into port A. <code>b_*</code> is the slave into port B.</p>
+      <p>Make six groups, in this order. Inside each group put <code>tvalid</code>, <code>tready</code>, <code>tstart</code>, <code>tlast</code>, <code>tkeep</code>, <code>tdata</code>, and <code>tuser</code>.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Group</th><th>Signals</th><th>What you are looking at</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Host A</td><td><code>ha_*</code></td><td>Bytes the bench hands NIC A</td></tr>
+            <tr><td>Into port A</td><td><code>a_*</code></td><td>NIC A sending into the bridge (<code>a_s_*</code>)</td></tr>
+            <tr><td>Out of port B</td><td><code>b_m_*</code></td><td>The bridge sending toward NIC B</td></tr>
+            <tr><td>Host B</td><td><code>hb_*</code></td><td>Bytes the bench hands NIC B</td></tr>
+            <tr><td>Into port B</td><td><code>b_*</code></td><td>NIC B sending into the bridge (<code>b_s_*</code>)</td></tr>
+            <tr><td>Out of port A</td><td><code>a_m_*</code></td><td>The bridge sending toward NIC A</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>In GTKWave, select the rows for one group, right-click, and choose Group. Set <code>tdata</code> to hex. A beat is only the cycles where <code>tvalid</code> and <code>tready</code> are both 1. <code>tready</code> alone is not a transfer. Zoom to one pulse of <code>tstart</code>, then across to the matching <code>tlast</code>. That span is one frame.</p>
+      <p>A frame on <code>ha_*</code> shows up later on <code>a_*</code>, after NIC A has stored it and started sending. If that frame is flooded or forwarded, the same bytes then show up on <code>b_m_*</code>. A frame on <code>hb_*</code> shows up on <code>b_*</code>, and if it is flooded or forwarded, on <code>a_m_*</code>. If the frame is filtered or dropped, the other master stays quiet through that <code>tlast</code>. On a port-A-only run, <code>a_*</code> is busy and <code>b_m_*</code> pulses only for the one flood.</p>
     </section>
   </main>
 

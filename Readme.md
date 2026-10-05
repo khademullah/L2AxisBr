@@ -24,7 +24,7 @@ sudo apt install build-essential verilator libpcap-dev
 make demo
 ```
 
-`make demo` replays the first 64 frames twice and checks the summaries below. GTKWave is optional (`make wave` after a run).
+`make demo` replays the first 64 frames twice and checks the summaries below. GTKWave is optional (`make wave` after a run). How to group the six port traces is in [docs/run.html](docs/run.html#tips).
 
 Both directions of the capture enter port A. The first frame floods; both MACs are then known on A, so the rest of the conversation is filtered:
 
@@ -82,7 +82,7 @@ Learning uses the outer addresses in the first 12 bytes, so a VLAN tag stays in 
 
 ## Pins
 
-Each ingress port is the [`nic_rx`](https://github.com/khademullah/Pcap2HDL) slave list. Each egress port is the matching AXI-Stream master. A frame taken on A is offered on B, and the other way around. The far side drives `m_tready`.
+Each ingress port is the [`nic_rx`](https://github.com/khademullah/Pcap2HDL) slave list. Each egress port is the matching AXI-Stream master. The four names `a_s_*`, `a_m_*`, `b_s_*`, and `b_m_*` are spelled out in [docs/run.html](docs/run.html#ports). The far side drives `m_tready`.
 
 | `nic_rx` | Port A | Port B |
 |---|---|---|
