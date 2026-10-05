@@ -24,7 +24,7 @@ sudo apt install build-essential verilator libpcap-dev
 make demo
 ```
 
-`make demo` replays the first 64 frames twice and checks the summaries below. GTKWave is optional (`make wave` after a run). How to group the six port traces is in [docs/run.html](docs/run.html#tips).
+`make demo` replays the first 64 frames twice and checks the summaries below. GTKWave is optional (`make wave` after a run). How to filter the port traces, and the same window with one group appended at a time, is in [docs/run.html](docs/run.html#tips).
 
 Both directions of the capture enter port A. The first frame floods; both MACs are then known on A, so the rest of the conversation is filtered:
 

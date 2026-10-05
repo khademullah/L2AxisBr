@@ -92,6 +92,92 @@
         </table>
       </div>
       <p>Set each <code>tdata</code> to hex. A beat is only the cycles where that group's <code>tvalid</code> and <code>tready</code> are both 1. <code>tready</code> alone is not a transfer. Zoom to one pulse of that group's <code>tstart</code>, then across to its <code>tlast</code>. That span is one frame.</p>
+      <p>A window that runs from 0 to 1,046,375 ns is the whole file. One clock in this bench is 10 ns, so that green band is many transfers drawn on top of each other. In that file <code>ha_*</code> and <code>a_*</code> are the same wires, because the example NICs were not compiled in. The recording below is a two-frame run with a NIC on each port, so the host, NIC A, and NIC B fall at three different times. The bytes are the first frame of <code>ns1_iperf.pcap</code>.</p>
+      <p>Each picture stays up until you choose the next step. <code>make run NIC=1 PCAP=ns1_iperf.pcap MAX_PACKETS=2 BP=1 SPLIT=1</code>.</p>
+      <div class="reader">
+        <input type="radio" name="wave" id="wave-1" checked>
+        <input type="radio" name="wave" id="wave-2">
+        <input type="radio" name="wave" id="wave-3">
+        <input type="radio" name="wave" id="wave-4">
+        <input type="radio" name="wave" id="wave-5">
+        <input type="radio" name="wave" id="wave-6">
+        <input type="radio" name="wave" id="wave-7">
+        <input type="radio" name="wave" id="wave-8">
+        <article class="reader-slide s1">
+          <img src="wave-1.png" alt="The whole VCD from 0 to 1,046,375 ns, drawn as one solid band.">
+          <p>The trace ends at 1,046,375 ns. That is the last time in the file, not one beat. A clock here is 10 ns. Until one clock is one column, the green line is many transfers stacked together.</p>
+          <div class="reader-nav"><span class="is-off">Previous</span><span>1 of 8</span><label class="next" for="wave-2">Next</label></div>
+        </article>
+        <article class="reader-slide s2">
+          <img src="wave-2.png" alt="Three bars. Host A, then NIC A, then NIC B, each 74 transfers at a different time.">
+          <p>This shorter trace is two frames with a NIC on each port. The bytes are the first frame of <code>ns1_iperf.pcap</code>. Each bar is 74 real transfers. Zoom into a bar before you call it one beat.</p>
+          <div class="reader-nav"><label for="wave-1">Previous</label><span>2 of 8</span><label class="next" for="wave-3">Next</label></div>
+        </article>
+        <article class="reader-slide s3">
+          <img src="wave-3.png" alt="Host A at 45 ns. tvalid, tready, and tstart are high. The byte is ba.">
+          <p><code>ha_tstart</code> is 1, and both <code>ha_tvalid</code> and <code>ha_tready</code> are 1. The byte is <code>ba</code>, the first byte of the destination. That column is one transfer. The next column is <code>dc</code>.</p>
+          <div class="reader-nav"><label for="wave-2">Previous</label><span>3 of 8</span><label class="next" for="wave-4">Next</label></div>
+        </article>
+        <article class="reader-slide s4">
+          <img src="wave-4.png" alt="45 ns tstart, 775 ns tlast, 74 transfers, 74 bytes.">
+          <p>Host A runs from 45 ns to 775 ns. <code>ha_tlast</code> rises on the last column, byte <code>0a</code>. Both pins are high on all 74 clocks, so the host made 74 transfers. The frame is 74 bytes.</p>
+          <div class="reader-nav"><label for="wave-3">Previous</label><span>4 of 8</span><label class="next" for="wave-5">Next</label></div>
+        </article>
+        <article class="reader-slide s5">
+          <img src="wave-5.png" alt="NIC A at 795 ns. tvalid is high, tready is low, byte dc. Marked not a transfer.">
+          <p>The same bytes show up on <code>a_*</code>, which is NIC A driving the bridge. At 795 ns <code>a_tvalid</code> is 1 and <code>a_tready</code> is 0, so <code>dc</code> does not move. Valid alone never counts.</p>
+          <div class="reader-nav"><label for="wave-4">Previous</label><span>5 of 8</span><label class="next" for="wave-6">Next</label></div>
+        </article>
+        <article class="reader-slide s6">
+          <img src="wave-6.png" alt="NIC A at 805 ns. tvalid and tready are both high. The byte dc is a transfer.">
+          <p><code>dc</code> was offered at 795 ns and refused. One clock later <code>a_tready</code> is 1. That is the transfer. On any AXI-Stream trace, count a beat only in the column where both pins are high.</p>
+          <div class="reader-nav"><label for="wave-5">Previous</label><span>6 of 8</span><label class="next" for="wave-7">Next</label></div>
+        </article>
+        <article class="reader-slide s7">
+          <img src="wave-7.png" alt="NIC B at 2265 ns. tstart, tvalid, and tready are high. The byte is ba.">
+          <p>The bridge sends the frame out <code>b_m_*</code>. At 2265 ns <code>b_m_tstart</code> is 1 and both pins are high. The byte is <code>ba</code> again. NIC B takes the same 74 bytes the host sent, each one a transfer on this port.</p>
+          <div class="reader-nav"><label for="wave-6">Previous</label><span>7 of 8</span><label class="next" for="wave-8">Next</label></div>
+        </article>
+        <article class="reader-slide s8">
+          <img src="wave-8.png" alt="Four checks. Zoom to one clock. Both pins high. Count tstart to tlast. Count the next port again.">
+          <p>Open the VCD. Zoom until one clock is one column. A transfer is the column where <code>tvalid</code> and <code>tready</code> are both 1. A frame is <code>tstart</code> through <code>tlast</code>. Then follow those bytes to the next interface and count again.</p>
+          <div class="reader-nav"><label for="wave-7">Previous</label><span>8 of 8</span><span class="is-off next">Next</span></div>
+        </article>
+      </div>
+      <p>The steps above stay. What follows is that same VCD opened in GTKWave, which is what <code>make wave</code> does. Click <code>tb_l2br</code> in the tree, type a prefix in the search box, and press Append. Each picture stays until you choose the next one.</p>
+      <div class="reader">
+        <input type="radio" name="gw" id="gw-1" checked>
+        <input type="radio" name="gw" id="gw-2">
+        <input type="radio" name="gw" id="gw-3">
+        <input type="radio" name="gw" id="gw-4">
+        <article class="reader-slide g1">
+          <img src="gw-1.png" alt="GTKWave opened on simulation_trace.vcd. Only the ha_ signals are appended, and the zoom is the whole 5.3 microseconds.">
+          <p>This is the window. The search box is at the lower left, under the tree. Nothing is typed in it yet. On the right, only the <code>ha_</code> wires are appended, and the zoom is the whole file, 0 to 5305 ns. The frame is a band at the left. That band is not one transfer.</p>
+          <div class="reader-nav"><span class="is-off">Previous</span><span>1 of 4</span><label class="next" for="gw-2">Next</label></div>
+        </article>
+        <article class="reader-slide g2">
+          <img src="gw-2.png" alt="GTKWave zoomed to 45 ns. ha_tvalid and ha_tready are high, ha_tstart is high, and ha_tdata is BA.">
+          <p>Type <code>ha_</code> in the search box and press Append on <code>ha_tvalid</code>, <code>ha_tready</code>, <code>ha_tstart</code>, <code>ha_tlast</code>, and <code>ha_tdata</code>. Zoom until the ruler reads tens of nanoseconds. The marker is at 45 ns. Both pins are 1, <code>ha_tstart</code> is 1, and the byte is <code>BA</code>. The next byte is <code>DC</code>.</p>
+          <div class="reader-nav"><label for="gw-1">Previous</label><span>2 of 4</span><label class="next" for="gw-3">Next</label></div>
+        </article>
+        <article class="reader-slide g3">
+          <img src="gw-3.png" alt="GTKWave showing a_tvalid high and a_tready low at 795 ns while a_tdata is DC.">
+          <p>Clear the search and type <code>a_t</code>, so the list is port A into the bridge and not <code>ha_</code> or <code>a_m_</code>. Append those wires. The marker is at 795 ns. <code>a_tvalid</code> is 1 and <code>a_tready</code> is 0, and the byte is still <code>DC</code>. That clock is not a transfer. The next time <code>a_tready</code> rises, <code>DC</code> moves.</p>
+          <div class="reader-nav"><label for="gw-2">Previous</label><span>3 of 4</span><label class="next" for="gw-4">Next</label></div>
+        </article>
+        <article class="reader-slide g4">
+          <img src="gw-4.png" alt="GTKWave showing b_m_tvalid and b_m_tready high at 2265 ns, with the flooded bytes BA, DC, 18.">
+          <p>Clear the search and type <code>b_m_</code>. Append those wires. The marker is at 2265 ns. <code>b_m_tvalid</code> and <code>b_m_tready</code> are both 1, <code>b_m_tstart</code> marks the frame, and the bytes are the same <code>BA</code>, <code>DC</code>, <code>18</code> the host sent. Same filter, next port. Anyone can repeat it with <code>make wave</code> after the two-frame run.</p>
+          <div class="reader-nav"><label for="gw-3">Previous</label><span>4 of 4</span><span class="is-off next">Next</span></div>
+        </article>
+      </div>
+      <ol>
+        <li>Zoom until one clock is one column. A transfer is that column only when <code>tvalid</code> and <code>tready</code> are both 1. The times below are in nanoseconds because this clock is 10 ns. GTKWave can show picoseconds, nanoseconds, or microseconds. Pick the unit that makes one rising edge one column.</li>
+        <li>Host A at 45 ns. <code>ha_tstart</code> is 1 and both pins are 1. The byte is <code>ba</code>, the first byte of the destination. That column is one transfer. The next column is <code>dc</code>.</li>
+        <li>Keep walking to <code>ha_tlast</code>. It rises at 775 ns on byte <code>0a</code>. Both pins stayed high, so the host made 74 transfers. The frame is 74 bytes.</li>
+        <li>NIC A drives the same bytes on <code>a_*</code> after it has stored the frame. At 795 ns <code>a_tvalid</code> is 1 and <code>a_tready</code> is 0, so <code>dc</code> does not move. At 805 ns both pins are 1, and <code>dc</code> enters the bridge.</li>
+        <li>The bridge floods the frame. At 2265 ns <code>b_m_tstart</code> is 1 and both pins are 1. NIC B takes <code>ba</code>, then the rest of the same 74 bytes. Same checks, next port.</li>
+      </ol>
       <p>A frame on <code>ha_*</code> shows up later on <code>a_*</code>, after NIC A has stored it and started sending. If that frame is flooded or forwarded, the same bytes then show up on <code>b_m_*</code>. A frame on <code>hb_*</code> shows up on <code>b_*</code>, and if it is flooded or forwarded, on <code>a_m_*</code>. If the frame is filtered or dropped, the other master stays quiet through that <code>tlast</code>. On a port-A-only run, <code>a_*</code> is busy and <code>b_m_*</code> pulses only for the one flood.</p>
     </section>
   </main>
